@@ -1,0 +1,437 @@
+---
+title: "Introduction to Text Mining with R"
+author: "Alberto, Akos, Daniel"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    fig_caption: yes
+    fig_width: 12
+    theme: readable
+  html_notebook:
+    df_print: paged
+    fig_caption: yes
+    fig_width: 12
+    theme: readable
+  pdf_document:
+    fig_caption: yes
+    fig_height: 3
+    fig_width: 12
+fontsize: 10pt
+---
+  
+<style type="text/css">
+body, td {
+    font-size: 14px;
+    text-align: justify;
+  }
+  
+code.r{
+  font-size: 12px;
+}
+h1 {
+  font-size: 35px;
+  text-align: center;
+}
+h2 {
+  font-size: 28px;
+  text-align: left;
+}
+h3 {
+  font-size: 20px;
+  text-align: left;
+  margin: 2em 0 1.5em 0;
+}
+h4 {
+  font-size: 17px;
+  text-align: center;
+  margin: 0em 0 1em 0;
+}
+</style>
+
+---
+```{r, echo=F,message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning=FALSE)
+```
+
+## Environment preparation
+
+First, as usual, let's load the necessary packages
+
+```{r, message=FALSE, warning=FALSE}
+#install.packages(c("ggplot2", "dplyr", "tidyr", "tidytext", "tm", "SnowballC", "wordcloud", "RColorBrewer", "topicmodels", "factoextra", "quanteda", "readr"))
+require(dplyr) #pipes
+require(tidyr) # dataset tidying 
+require(tidytext) # dataset tidying for corpus 
+require(ggplot2) #data viz 
+require(tm) # Basic Text mining package 
+require(SnowballC) # one of the most popular stemmer based on porter 
+require(wordcloud) 
+require(RColorBrewer)## For wordcloud coloring
+require(topicmodels) 
+require(factoextra) #Utility for CA
+library(readtext)
+require(quanteda) #popular package for text mining 
+require(readr) #read csv
+# we need to install some additiona packages to load the next one
+#install.packages("devtools")
+#devtools::install_github("kbenoit/quanteda.dictionaries") 
+library(quanteda.dictionaries) #additioal dics and sentiment analysis 
+```
+
+## The Good and the Evil of R
+
+As you already know, R has many different packages that do more or less the same things. This leads to the lack of a unified framework in terms of data structure, format, syntax.
+
+Among the multitude of packages used for text mining, these 3 are worth a mention: 
+
++ [tidytext (Silge and Robinson 2016)](https://www.tidytextmining.com/): includes many methods for text wrangling, analysis and visualization. 
+
++ [tm (Feinerer et al. 2008)](https://cran.r-project.org/web/packages/tm/vignettes/tm.pdf): one of the oldest package out there. Very good for data manipulation and management 
+
++ [quanteda (Kenneth Benoit)](https://cloud.r-project.org/web/packages/quanteda/index.html): an R package for managing and analysing text. It wants to be the new standard for text mining. 
+
+In this short session we will mainly use ```quanteda```. This allows us to reduce complexity and not be dependent on many packages. 
+
+## Data Management, Subsetting and Corpus creation
+
+### How to import text from a .csv file
+
+```{r,echo=FALSE,message=FALSE, warning=FALSE}
+# library(quanteda)
+# data(data_corpus_inaugural) #how to read datasource from packages. 
+# dataframe<-data.frame(text=unlist(sapply(data_corpus_inaugural, `[`)), stringsAsFactors=F) 
+# #this is messy. Let's clean it!
+# a= as.data.frame(dataframe$text[1:58]) #the text of the speech 
+# colnames(a) ="Speech text" #rename the col
+# b = as.data.frame(dataframe[117:174,]) # the name of the president 
+# colnames(b) ="President Name"
+# year = as.data.frame(dataframe[59:116,]) #the year 
+# colnames(year) ="Year"
+# binded=cbind(b,year,a) #let's bind everything together
+# write_csv(binded,"./example_corpus.csv") #the ./ indicates the work directory
+```
+
+When we are lucky enough, our texts are already cleaned and stored in a csv file. This allows us to easily import them using a complementary package to ```quanteda```, ```readtext```
+
+```{r}
+library(readtext) # let's load it. Remember if you install it using the command install.packages("readtext")
+inaug_csv<- readtext("./example_corpus.csv",text_field = "Speech text") # the text_field parameter indicates where our text corpus is stored  
+
+# another option is to use the classic read_csv
+# you can specify additional parameters such as the encoding 
+# inaug_csv <- read_csv("./example_corpus.csv") 
+
+head(inaug_csv) # let's see how it looks 
+```
+
+
+### Create a dataframe from multiple files
+
+Most of the time, our texts are not already packaged in a dataframe or .csv file but spread in multiple folders. In such instances, we need to combine different files in a format that can be useful for our analysis. 
+
+We can achieve it still using ```readtext``` with some additional parameters.
+
+```{r}
+library(readtext)
+inaug_text_files <- readtext("/Users/serg/Google Drive/Academia/CEU/ta_R intro/inauguration_speeches/*.txt",encoding = "UTF-8")
+
+library(stringr) #string managment
+inaug_text_files$doc_id <- str_sub(inaug_text_files$doc_id,end=-5) # to remove the last 4 char of our file names
+
+```
+
+### Additional document-level variables
+
+You might be interested in analysing the inaugural speeches from the beginning of the century or only of certains President of the United States (POTUS). Let's see how to the get these data and use them to our needs. 
+
+First, we need to extract the year and the name from doc_id. We can do it easily with ```str_sub```
+```{r }
+library(stringr)
+inaug_text_files$year <- str_sub(inaug_text_files$doc_id,end=4) # to get the first 4 char of our file names
+inaug_text_files$year <- as.numeric(inaug_text_files$year) # years are numbers, right?
+inaug_text_files$pres_name <- str_sub(inaug_text_files$doc_id,start=6) # to get the POTUS(es) names
+
+```
+
+Once we have these new variables, we can subset our document using any document-level variables as we would do with a normal dataframe. We have already learned how to do it using  ```subset ``` 
+
+```{r }
+recent_inaug_text_files <- subset(inaug_text_files, year >= 2000) 
+dem_inaug_text_files <- subset(inaug_text_files, pres_name %in% c('Obama', 'Clinton', 'Carter'))
+
+```
+
+Pretty easy, no?  In this way we can run two different analysis, one on recent speeches and the other on Democrat POTUS(es). It works the same for every other variables.
+
+### Corpus
+
+To transform our dataframe in a corpus we can use the  ```corpus``` function from ```quanteda```. Although there are other valid alternatives, this one is the most flexible.
+
+Similarly to ```readtext ``` we need to specify where our text is collocated using the text_field parameter. Take a look at the help file if you want to know what ```corpus``` is capable of.  
+
+```{r}
+library(quanteda)
+inaug_corpus <- corpus(inaug_text_files)
+```
+
+Let's see if everything went well. . Be sure that we do not have missing values and the texts are encoded correctly. **ALWAYS re-check your results**
+
+```{r}
+summary(inaug_corpus)
+summary(inaug_corpus,5) # just the first 5 entries
+cat(texts(inaug_corpus)[2], fill=60) # access the texts stored in our corpus
+#inaug_corpus$documents[[1]][2] #an alternative more elaborate way
+```
+
+## Text cleaning and pre-processing 101
+
+### Tokenize, Tokenize, Tokenize!
+
+Once we are sure that all documents are loaded properly, we can proceed to pre-process our texts. In order to remove numbers, capitalization, common words, punctuation from our texts we need to tokenize it. It's good to know that most of the techniques that we will use from this point on, including text cleaning and pre-processing, are based on tokenization. 
+
+Tokenization is the act of breaking up a sequence of strings into pieces such as words, keywords, phrases, symbols and other elements called tokens. 
+
+We will come back to this later but for now let's see how it works using ```quanteda```
+
+```{r}
+library(quanteda)
+toks <- tokens(inaug_corpus) 
+head(toks[[1]], 50) # the first 50 tokens of our first document
+```
+
+### Pre-processing and DTM 
+
+Tokenizing texts is an intermediate option, and most of us want to skip it. 
+
+Unlike other packages, ```quanteda``` tokenises and cleans automatically our texts when we create a dfm with the function ```dfm()```. A document-feature matrix format can be created from a character, corpus, tokens, or even other dfm object. Although dfm format is handy and flexible, when we transform our corpus in a dfm we loose some informations such as the spatial collocation of the words in the text. For this reason, some of the analysis that we see later requires non-pre-processed tokens or corpora. 
+
+The ```dfm()``` function applies certain options by default, such as ```tolower()``` – a separate function for lower-casing texts – and removes punctuation. *NOTE*: All of the options to ```tokens()```  can be passed to  ```dfm()```. Let's see how it works. 
+
+
+```{r }
+library(quanteda)
+pre_processed_dfm <- dfm(inaug_corpus, remove = stopwords("english"), stem = TRUE, remove_punct = TRUE, remove_numbers = FALSE, remove_symbols = TRUE, remove_separators = TRUE, remove_hyphens = TRUE, remove_url = TRUE)
+
+
+```
+
+For some text mining techniques, removing stop words is essential. The ```stopwords```  function from the ```stopwords``` package has the advantage to support different languages and be quite flexible. Let's check the first 20 stop words in English and Russian. 
+
+
+```{r}
+head(stopwords("english"), 20)
+head(stopwords("russian"), 20)
+```
+
+OK, let's take a closer look to the English list. Anything missing? 
+
+```{r}
+head(sort(stopwords("english")),20)
+```
+
+Yes, the word also is missing. Is this problematic? It could be. What can we do? We can use a different package such as  ```stop_words ``` from  ```tidytext ```, we can create our custom stop words dictionary, or we can specify another source in the ```stopwords``` package (the default is "snowball")
+
+```{r }
+head(sort(stopwords("english",source = "stopwords-iso")),20)
+```
+
+Another package that can be used in combination with ```quanteda``` is ```qdap``` which offers other text cleaning functions. Each one is useful in its own way and is particularly powerful when combined with the others. [Here a pratical guide for compatibility and usage](https://cran.r-project.org/web/packages/qdap/vignettes/tm_package_compatibility.pdf).
+
++ ```bracketX()```: Remove all text within brackets (e.g. “It’s (so) cool” becomes “It’s cool”)
++ ```replace_number()```: Replace numbers with their word equivalents (e.g. “2” becomes “two”)
++ ```replace_abbreviation()```: Replace abbreviations with their full text equivalents (e.g. “Sr” becomes “Senior”)
++ ```replace_contraction()```: Convert contractions back to their base words (e.g. “shouldn’t” becomes “should not”)
++ ```replace_symbol()```: Replace common symbols with their word equivalents (e.g. “$” becomes “dollar”)
+
+Cool, it's now time to check our cleaned dfm.
+
+```{r }
+pre_processed_dfm
+str(pre_processed_dfm)
+```
+
+## Text Analysis 101
+
+### 1 - Word Frequency
+
+#### 1.1 - The basics
+
+There are a lot of terms, so for now, just check out some of the most and least frequently occurring words. The simplest way to get the word frequency is the function ```topfeatures``` from the ```quanteda``` package.
+
+
+```{r}
+library(quanteda)
+topfeatures(pre_processed_dfm, 20)  # 20 top words
+```
+
+Let's visualise them using ggplot. First let's create a new object with the command ```textstat_frequency```. It's similar to ```topfeatures``` but it is more informative, flexible, and it creates a dataframe automatically.
+
+```{r }
+library(quanteda)
+library(ggplot2)
+top_30 <- textstat_frequency(pre_processed_dfm,n = 30) # 30 top words
+
+top_30 %>% 
+  # the reorder command simply order our words (features) based on their reative count
+  ggplot(aes(x = reorder(feature, frequency), y = frequency)) + 
+  # we specify points as geometry
+  geom_point() +
+  # flip the x and y axes
+  coord_flip() +
+  # the labels of the axes
+  labs(x = NULL, y = "Frequency") +
+  # the theme 
+  theme_minimal()
+```
+
+Want a bar chart? That's easy with ggplot
+
+```{r }
+top_30 %>% 
+  ggplot(aes(x = reorder(feature, -frequency), y = frequency)) +
+  geom_bar(stat = "identity") + 
+  theme_minimal() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  labs(x = NULL, y = "Frequency")
+
+```
+
+Can we get rid of some words? I believe that **one** and **let** are not very informative. 
+
+```{r  }
+words_removed_dfm <- dfm(pre_processed_dfm, remove = c("one","let"))
+
+```
+
+Let's now visualise the top 30 words as we did before.
+
+```{r  }
+top_30_removed <- textstat_frequency(words_removed_dfm,n = 30) # 30 top words
+top_30_removed %>% 
+  ggplot(aes(x = reorder(feature, -frequency), y = frequency)) +
+  geom_bar(stat = "identity") + 
+  theme_minimal() +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  labs(x = NULL, y = "Frequency")
+
+```
+
+**Note**: In larger and more complex corpora removing meaningless words can really make the difference in term of quality and reliability of your analysis. **Remember** to always check qualitatively the results. 
+
+Take home: **Check, check, and re-check!**
+
+#### 1.2 -Frequency and groups 
+
+Frequency tables and visualisation are extremely powerful and informative when combined with other document-level variables. In our dfm we previously stored the name of POTUS and the year of the speeches. Let's start with the relative frequencies of the most used words grouped by the POTUS.
+
+```{r  }
+library(quanteda)
+# we are interested in the relative frequencies of each word so we set scheme to "prop". 
+# check the help for other info
+freq_weight <- dfm_weight(pre_processed_dfm,scheme = "prop")
+# let's count the top 10 words and group them accocording to the "name" of the POTUS
+top_10_name <- textstat_frequency(freq_weight, n = 10, groups = "pres_name")
+
+#let's plot it! 
+ggplot(data = top_10_name, aes(x = nrow(top_10_name):1, y = frequency)) +
+     geom_point() +
+     facet_wrap(~ group, scales = "free") +
+     coord_flip() +
+     scale_x_continuous(breaks = nrow(top_10_name):1,
+                        labels = top_10_name$feature) +
+     labs(x = NULL, y = "Relative frequency")
+
+```
+
+Pretty cool, isn't it? Now let's include the temporal dimension and plot the frequency of different words from 1977 to 2017 in the POTUS(es) inaugural speeches. 
+
+```{r  }
+library(quanteda)
+# let's first select some words. 
+# NOTE that we are using the stemmed dfm. Using a non-stemmed one could be better in some situations
+dfm_selected <- dfm_select(pre_processed_dfm, c("freedom", "tax", "peac",
+                       "liber", "war", "revol","peopl","american","nation","job","america"), selection = "keep", valuetype = "fixed")
+
+word_freq_year <- textstat_frequency(dfm_selected,groups = "year")
+
+ggplot(data= word_freq_year, aes(group, frequency, color = feature, group = 0)) +
+    # divide our plot based on the selected words
+    facet_wrap(~feature) +
+    # set up the plot line
+    geom_line(size = 1.5, show.legend = FALSE) +
+    # fix the limit f the y axis as the higher count 
+    expand_limits(y = 0) +
+    # set up the style of the x axis 
+    theme(axis.text.x = element_text(angle=75,vjust = 0.5)) +
+    # set up the lables
+    labs(x = NULL, y = "Absolute frequency")
+
+
+```
+
+
+### 2 - Sentiment analysis 
+
+With the ```liwcalike()``` function from the ```quanteda.dictionaries``` package, we can easily analyse text corpora using existing or custom dictionaries. *NOTE*: Similarly to the collocation analysis, ```liwcalike``` requires a corpus and not a dfm. Keep it in mind!
+
+```{r }
+library(quanteda.dictionaries)
+nrc_sentiment <- liwcalike(inaug_corpus, data_dictionary_NRC)
+
+nrc_sentiment$net_positive <- nrc_sentiment$positive - nrc_sentiment$negative
+
+library(ggplot2)
+ggplot(nrc_sentiment, aes(docname, net_positive,group = 1)) +
+    geom_point(size = 2.5) +
+    geom_line(size = 1.5, show.legend = FALSE) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle=75,vjust = 0.5))+
+    labs(x="President Name", y="Net-Positive")
+
+```
+
+
+### 3 - Topic Modeling 
+
+When we work with texts, we often have collections of documents, such as blog posts or news articles, that we would like to divide into natural groups so that we can understand them separately. Topic modelling is a method for unsupervised classification of such documents, similar to clustering on numeric data, which finds natural groups of items even when we’re not sure what we’re looking for.
+
+Latent Dirichlet allocation (LDA) is a particularly popular method for fitting a topic model. It treats each document as a mixture of topics, and each topic as a mixture of words. This allows documents to “overlap” each other in terms of content, rather than being separated into discrete groups, in a way that mirrors typical use of natural language.
+
+Let's try to fit one with the ```LDA()``` function from the ```topicmodels``` package. 
+
+```{r  }
+sci_lda <- LDA(pre_processed_dfm, k = 4, control = list(seed = 666)) 
+# 4 topics. Remeber to set the seed for reproducibility
+```
+
+Let's simply visualize each topic based on the most frequent terms within it
+
+```{r  }
+sci_lda %>%
+  tidy() %>%
+  group_by(topic) %>%
+  top_n(8, beta) %>%
+  ungroup() %>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free_y") +
+  coord_flip()
+
+```
+
+## A note:
+There are 100 ways to do the things we did in this script. The most important thing is that you know one of these ways, and that if you don't know how to do something, you are able to figure it out using Google.
+
+## Some resources:
+
+Regarding Quanteda you can start from this Ken Benoit article:
+http://kenbenoit.net/pdfs/text_analysis_in_R.pdf
+
+## Ok, now let's exercise
+
+ <span style="font-size:larger;">[DataCamp course on text minining with R](https://campus.datacamp.com/courses/intro-to-text-mining-bag-of-words/jumping-into-text-mining-with-bag-of-words?ex=1)</span>
+
+
+

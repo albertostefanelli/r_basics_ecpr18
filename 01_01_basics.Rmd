@@ -1,0 +1,644 @@
+---
+title: "Session One"
+subtitle: "Overview"
+author: "Akos Mate"
+date: '2018 July'
+output:
+    html_document:
+        toc: true
+        toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      collapse = TRUE,
+                      comment = "#>",
+                      message = FALSE
+)
+```
+
+
+
+# 1. An overview
+
+> Contact info: Akos: mate_akos@phd.ceu.edu | Alberto: Stefanelli_Alberto@student.ceu.edu | Daniel: Kovarek_Daniel@phd.ceu.edu
+> Course materials: [The course's GitHub page](https://github.com/aakosm/r_basics_ecpr18) | [CEU's moodle](https://ceulearning.ceu.edu/)  
+
+Many thanks for [Martin Mölder](https://martinmolder.com/) @ University of Tartu for help developing this course!  
+
+## 1.1 What is R
+
+R is an open source programming language that is extremely versatile and rapidly becoming the top choice for data analysis tasks both in academia and in the industry. It is different from ‘point and click’ software (such as SPSS) since you need to write code to tell R what you want it to do. This means a steep learning curve but even on the short run will allow to produce code that is custom made to your specific problem and can be reproduced reliably by you or others.
+
+![](learning_curve.jpg)
+
+But don't worry! By the end of today, you'll be able to create this plot:  
+
+
+```{r, out.width = "600px", echo=FALSE}
+knitr::include_graphics("gapminder.png")
+```
+
+
+## 1.2 Why R?
+
+- One of the most used statistical tools in academia and in industry (next to Python and Matlab)
+- It is open source, which means that the functions are not black boxes; when in doubt you can check what happens under the hood.
+- Because it is open source, it is at the cutting-edge of implementing new methods
+- The R developer and user community is great in numbers and in resources. If you have a problem, chances are that - - there is a package for that, or an online discussion on how to solve it.
+- Reproducible research, which means that your code will produce the exact same output, making it easier to replicate your results or verify your (or others’) methods.
+- Statistical programming is a great transferable skill to have
+- Free of charge
+
+<br>
+<br>
+
+**Evidence 1:**
+
+![](r_popularity.png)
+
+<br>
+<br>
+
+**Evidence 2:**
+
+![](r_users.png)
+
+
+*Source: [https://stackoverflow.blog/2017/10/10/impressive-growth-r/](Stack Overflow blog)*
+
+
+## 1.3 Outline and goals of the course
+
+The goals of this course:
+- Hands on experience with R
+- Equip you with a solid foundational knowledge of R and its ecosystem
+- Walk through from the basics to producing meaningful analysis
+- Heavy emphasis on visualization
+- Using the new tools the R ecosystem can offer
+- Cover all the steps of the research workflow: data cleaning -> data wrangling -> exploratory analysis -> modelling -> reporting
+- Preparing you on how to get into R more if you want to (many ECPR courses for that!)
+
+
+**Day 1**
+
+- **1** The general introduction to R + RStudio
+
+- **2** We finish the first day by learning how to install and load packages into R and use this knowledge to load some data sets and perform some basic explorations
+
+**Day 2**
+
+- **3** We start getting acquainted with the `tidyverse` packages for data wrangling. (reshape data with `tidyr`)  
+
+- **4** Continue getting acquainted with the `tidyverse` packages for data wrangling. (data wrangling with the `dplyr` package)  
+
+- **5** More data operations, now with some `base` R functions and writing loops. As R is not really suited for using loops efficiently we will look at alternatives, such as the `apply` function family. In this session we will also write our own functions.  
+
+- **6** Data visualisation with `ggplot2`. We will go into the nitty-gritty of dataviz and look how we can tinker with our plots, how to use custom theme settings and make great looking charts.  
+
+  
+**Day 3**
+
+- **7** Statistics! We will perform a series of statistical analysis, ranging from difference in means tests, ANOVA to regressions.
+
+- **8** More statistics and a buffer session if we still have some things left over from before    
+
+- **9** After having the tools to perform basic summary statistics, create visualizations and shape our data to our desire, we will start learning to use `R Markdown` for documenting our work and output. This will include getting our results out of R to LaTeX, html and Word.  
+
+- **10**: R teasers: text analysis, twitter scraping with API, network analysis (?)
+
+----------
+
+# 2. Setting up R and RStudio
+
+> Supplimentary resources: [RStudio IDE Cheat Sheet](https://www.rstudio.com/wp-content/uploads/2016/01/rstudio-IDE-cheatsheet.pdf)  
+
+
+
+Base R comes with a pretty spartan GUI so we will work with the RStudio IDE (integrated development environment). Alternatively you can use Microsoft's [Visual Studio](https://visualstudio.microsoft.com/vs/features/rtvs/), which also gives you a nice work environment. In some cases it can be faster on Windows than R Studio.
+
+The workflow with R Studio consists of using:
+
+1. Scripts for writing code (you should avoid working directly to the console!)
+2. Projects, so your work is self-contained.
+3. Some miscalleneus setting that *really* helps
+
+Some tips for using RStudio:
+
+* Under `Tools -> Global Options` you could change the following:  
+
+    + `Code -> Editing -> Soft wrap R source files` If you check this, the lines in your script file do not run “out of the window”.
+    + `Appearance`: You can select your colour scheme here. If you stare at the screen for a long time, white text against a darker background might be less hard on the eyes.
+    + `Pane layout`: Here you can select how the window space in R studio is arranged. It might be useful to keep your source file on the one side and the console on the other side and not on top of each other. (see pic below)  
+    
+
+* A few essential keyboard short-cuts (for Windows):
+
+    + Control+Enter: run the code on the current line
+    + Control+Alt+B: run the code from the beginning to the current line.
+    + Control+Alt+E: run the code from the current line to the end of the source file.
+    + Control+D: delete the current line.
+    + Alt+Shift+Up/Down: Copy the current line above or below the line.
+    + Alt+Control+Up/Down: Copy the current line above or below the line.
+    + You can see the full list of keyboard short-cuts in RStudio, if you press **Alt+Shift+K**
+
+  
+![](rstudio_pane_reorder.PNG)  
+
+## 2.1 Using Projects
+
+Using Projcets with RStudio will simplify your workflow. Essentially, all your project related files are collected in your selected folder so you don't need to specify a working directory. Your project will be able to run as long as you copy the entire folder.
+
+How to set one up: `File -> New Project` then choose a directory where you want to have your R scripts, data and history files. You should also disable the **"Restore most recently opened project at startup"** and **"Restore .RData ino workspace at startup"**, and also set **"Save workspace to .RData on exit"** to **Never** in `Tools -> Global Options -> General` 
+
+For more help and materials on using projects, see [RStudio's own resource page](https://support.rstudio.com/hc/en-us/articles/200526207-Using-Projects) or an [well argued reasoning from Jenny Brian](https://www.tidyverse.org/articles/2017/12/workflow-vs-script/) 
+
+
+![](project_global_options.PNG)  
+
+
+<br>
+<br>
+
+
+> **General tips:**  
+> - Check the [R coding style guide](http://style.tidyverse.org/index.html)  
+> - Comment your codes heavily (with the `#`) because now seemingly straightforward code will not be so in the future  
+> - Use sensible file names (e.g.: `01_data_cleaning.R`)  
+> - R is case sensitive, so use lowercase file and variable names. Separate words with underscore `_` (e.g.: `ols_reg_1`)
+
+
+## 2.2 Getting help and citing R and packages
+
+It is OK to get stuck in R and look for help. Don't worry if don't remember a function's name or arguments by heart, as with everything the more you write R, the more you can recall from memory.  
+
+
+```{r, out.width = "500px", echo=FALSE}
+knitr::include_graphics("peng_twit.png")
+```
+  
+  
+```{r, out.width = "300px", echo=FALSE}
+knitr::include_graphics("peng_prof.png")
+```    
+  
+  
+
+Some effective ways to seek help with R related problems:
+
+- Within R, you can just type `?function name` and you'll be shown the function help. This is often not that informative.
+- Google “R” followed by the name of the package and/or a very short description of the problem. Like this: “R ggplot bar chart”
+- Google “R” followed by the error message (or part of it) that R gives you. Don't forget to double check for typos, missed commas, brackets or some other trivial problem.
+- Most of the case one of the first hits will be a topic on [Stack Overflow](https://stackoverflow.com/). You can use it to ask your own questions, BUT check if it is not a duplicate because there is a good chance that some else already encountered the same problem that you are searching for.
+
+Since R is an open source project it is a common courtesy to cite R and the packages you use, as people (often in academia) put many hours into developing tools and it is in our common interest to give some public recognition to these efforts and contributions. To see how to cite R or you can just type the following:
+
+```{r}
+citation()
+```
+
+You can cite a specific package with the following:
+```{r}
+citation("quanteda")
+```
+
+
+# 3. First steps - Basic operations in R
+
+> Main packages used: `base R`  
+> Main functions covered: `help`, `c()`, `typeof()`, `lenght()`, `sum()`, `data.frame()`, `matrix()`, `list()`, `[`, `[[`  
+> Supplementary resources: [Base R Cheat Sheet](https://www.rstudio.com/wp-content/uploads/2016/05/base-r.pdf)  
+
+To getting started, create a new project for the course and start a new R script by Ctrl + Shift + N. Don't forget to save the script to your project folder (Ctrl + s)! You can copy and paste code from this html document to your script and run it, but I recommend that you type everything as it allows for deeper learning experience. If you get stuck you can always check this document.  
+
+**Don't forget to comment your code with `#` (hashtag). Anything in the given line after `#` will not be taken into R when it runs the code.**  
+
+
+## 3.1 R as calculator
+
+We can make R carry out basic calculations with the usual symbols: `+ - / *`. You can run the current line (don't need to select the code) with the Ctrl + Enter shortcut. 
+
+```{r  }
+16+80
+
+# R follows the order of operations of course
+4+4/2
+
+(3-27+128)*16
+
+```
+
+In addition to carry out numerical operations, you can ask R to check if certain logical conditions are met, such as a value is greater or less or equal to another. It is essentially asking R the question of "is this value greater than that value?" to which we will receive an output of `FALSE` or `TRUE`.
+
+```{r  }
+5 > 4 # greater than
+
+6 < 8
+
+7 == 7 # equal with
+
+10 >= 10 # greater or equal than
+
+42 != 42 # not equal to
+```
+
+The conditions that you can use in R:
+
+* `a == b` Are equal
+* `a != b` Not equal
+* `a > b` Greater than
+* `a < b` Less than
+* `a >= b` Greater than or equal to
+* `a <= b` Less than or equal to
+* `!x` Not x
+* `x | y` x OR y
+* `x & y` x AND y
+* `is.na(a)` Is missing
+* `is.null(a)` Is null
+
+## 3.2 Functions
+
+Functions do the heavy lifting in R. They have the format below:
+
+```{r eval=FALSE}
+
+function(argument1 = value1, argument2 = value2, ...)
+
+```
+
+For example check the following code for computing a square root of x
+
+```{r  }
+x <- 7 # assign a value to an object (variable) named 'x'
+
+# computing the square root "by hand" and with the help of a built in function
+x^0.5
+
+sqrt(x)
+```
+R comes with a variety of math functions if needed. Some examples are below. For the `log()` example, you can see that the first computes the natural logarithm. If you have something else in mind, you can specify it with the `base = ` argument.
+
+```{r  }
+
+log(10)
+
+# you can specify the base if you want
+log(10, base = 10)
+
+
+# if you need to round, you can use the `round()` function and nest the other function in it. E.g.:
+round(sin(5), 2)
+```
+
+If you are in doubt what are the arguments of the given function, you can use `?help(function_name)`, `?function_name` or more directly
+```{r}
+args(round)
+```
+
+> QUICK EXERCISE: check the help of the `sin()` function!
+
+## 3.3 Data types, variables and data structures
+
+R let's you save data by storing it in an object (it's just a fancy name for stored data basically). You can do it with an assign operator: `<-` (**shortcut: Left Alt + `-`**). The `=` sign also works but it is R coding practice to use `<-` to assign values to objects and use `=` within functions. Using the shortcut helps!
+
+```{r  }
+a <- 16+80
+
+b <- 4+4/2
+
+# you can check (evaluate) your object by running it's name
+a
+
+# you can also perform any operations on it as well
+a/2
+
+a*b
+```
+
+Objects are essential part of the R workflow. You can see your current objects in the righ pane named 'Environment'. 
+
+<br>  
+
+![](variable_in_environment.PNG)  
+
+<br>  
+<br>  
+
+### 3.3.1 vectors  
+
+You can also combine values into a vector. To do this, we use the `c()` function. Below we will create numeric vectors with lenght of four. When you perform operations with vectors keep in mind that R matches the first element of the first vector to the first element of the second vector (called *element-wise execution*). This will result in a new vector with the same lenght as the originals. You can specify each element of the vector or give a range (e.g.: `c(1:4)`)
+
+```{r  }
+c(5, 10, 15, 20)
+
+# operations with vectors
+c(1:4) + c(10,20,30,40)
+```
+
+> QUICK EXCERCISE: check what happens if you try to do operations on numerical vectors of different size!
+
+These vectors can have six types: *doubles*, *integers*, *characters*, *logicals*, *complex*, and *raw*. To check if we are indeed dealing with a vector, we can perform the `is.type` question, as below. We can also check its lenght, just in case. If you are not sure about the type you can skip the trial and error with the `typeof()` function. (we'll skip complex and raw, as they are so niche that you can just check in case you ever need those)
+
+```{r  }
+num <- c(5, 10, 15, 20)
+
+is.vector(num)
+
+length(num)
+
+typeof(num)
+```
+
+R functions use the name "double" and "numerics" interchangeably (and so will I during the course). ((doubles comes from computer science and refers to the number of bytes it takes to store a number)) Numerics can be positive, negative, have digits or not, they are regular numbers. If you insist on having an integer vector you can specify it by adding an L after the numeric value. In most of the cases you will use numerics instead of integers and R defaults to numerics as well if you do not specify your needs. 
+
+```{r}
+int <- c(4L, 7L, 18L)
+
+typeof(int)
+
+# or you can use the `as.integer()` function that coerces a numerical vector into integers. Let's use our vector a
+int2 <- as.integer(num)
+
+is.integer(int2)
+
+```
+
+For characters, you have to wrap the values between " " (or ' ') for R to recognize it as such.
+
+```{r  }
+# a vector with character (string) values, with a length of 3 and 1
+text1 <- c("Han", "shot", "first") 
+
+text2 <- c("Hello world")
+
+typeof(text1)
+
+length(text1)
+
+length(text2)
+```
+
+
+> QUICK EXCERCISE: create a character vector, which would give the following result.
+
+```{r echo=FALSE}
+print(c("42", "4", "2"))
+```
+
+
+You can also combine vectors into one with the `c()` function.
+
+```{r}
+text3 <- c(text1, text2, "this is", "R")
+
+text3
+```
+
+> QUICK EXERCISE: combine our previous numerical vector into one. You should see the same result as below (num and a and b). What happens if you try to mix the two type of vectors (num and text1)?
+
+```{r echo=FALSE}
+print(c(num, a, b))
+```
+
+You can store logical values in a vector as well. R assigns numerical values to them in some cases, where `TRUE` is 1, and `FALSE` is 0. See the below example.
+
+```{r}
+logic <- c(TRUE, FALSE, FALSE)
+
+typeof(logic)
+
+# or store the result of a logical evaluation
+test <- text2 == "Hello world"
+
+test
+
+# to count how many `TRUE` values we have, let's sum up the logic vector
+sum(logic)
+```
+
+This latter function comes handy if we want to know for example, how many values are above or below a certain treshold in our vector. We are going to use the `sum()` function for this.
+
+```{r}
+num > 10
+
+# let's sum the results
+sum(num > 10)
+```
+
+> QUICK EXCERCISE:  How about when we want to know the proportion of values in the vector `num` that are above a certain value? Use the functions that we have already discussed to calculate this automatically. (let's say 8)
+
+```{r, echo=FALSE}
+(num > 8)/length(num)
+```
+
+
+
+If you want to refer to a specific value in a vector, you must use square brackets after the name of the object: `[` and `[[`. The brackets contain the sequence number of the value you want to refer to. Such indexing can also be used to replace values in objects. **BEWARE** that R happily overwrites your objects without any warning or double checks and there is no undo button! It is best to create new objects if you plan to further tinker with them.
+
+```{r}
+num
+
+num[3]
+
+# assigning a new value to the third element in our vector. This will overwrite the previous value.
+num[3] <- 42
+
+num
+```
+
+
+There are alternative ways to create vectors in addition to the above covered `c()` and `:`. You can use the `seq()` and `rep()` functions. If you want to generate a sequance of numbers with a given pattern, `seq()` can do that. Or if you need to repeat a value, you should use `rep()`.
+
+```{r}
+# generate a sequance of numbers from 3 to 42 with increments of 2
+seq(from = 3, to = 42, by = 2)
+
+# generate a sequance of numbers from 3 to 42 that has a lenght of 10
+seq(from = 3, to = 42, length.out = 10)
+
+# replicate the given values in the given order
+rep(5:10, times = 2)
+
+# replicate the given values each
+rep(5:10, each = 2)
+```
+
+
+
+### 3.3.2 Factors
+
+Another common data type in R is factor variable where you assign discrete levels to your values. It is commonly used in survey responses or for other categorical data (eye color, gender, political party preference, etc.). we can create a factor variable with the `factor()` function, where we can add the elements and specify the levels.
+
+```{r}
+party_pref <- c("social democrat", "social conservative", "liberal", "green", "green", "social conservative")
+
+# transform our character vector to factor
+party_pref <- factor(party_pref, levels = c("social democrat", "social conservative", "liberal", "green"))
+
+party_pref
+
+# if we want to set a given order, we can do that too.
+survey_response <- factor(c("agree", "neutral", "disagree", "neutral", "disagree", "disagree", "agree"), 
+                          levels = c("agree", "neutral", "disagree"), 
+                          ordered = TRUE)
+
+survey_response
+
+```
+
+### 3.3.3 Data frames
+
+The point of spending so much time with vectors is that you'll be working with them all the time in R, just not as atomic vectors, but combined together into a data frame. Data frame is a rectangular data structure, where usually each row is an observation and each column is a variable.The vectors that make up the data frame are the same lenght. You can combine various vectors with the `data.frame()` function. It is good to familiarize with the data frame as it is the workhorse data structure of R.
+
+```{r}
+country <- c("Thailand", "Norway", "Colombia", "Canada", "Slovenia", "France")
+pop <- c(68.7, 5.2, 47.8, 35.8, 2, 63.6)
+
+df1 <- data.frame(country, pop)
+
+df1
+```
+
+If we are unsatisfied with the column names that R gave based on the vector names, we can rectify this situation with the `names()` function. Alternatively, you can specify names in the `data.frame()` function as well.
+
+```{r}
+names(df1) <- c("Country", "Population")
+
+df1
+
+# using the data.frame for setting names
+
+df1 <- data.frame(Country = country, Population = pop)
+
+df1
+```
+
+You can select individual rows and columns similarly as we did before with atomic vectors. R uses the following logic: `data_frame[rows, columns]`. While this approach works for rectangular data (such as data frames and matrices) you can also refer to column by their names. For this, use the `$` sign. Remember: **rows by columns** is the order for indexing in R!
+
+```{r}
+
+# check the second row
+df1[2, ]
+
+# check the first column
+df1[, 1]
+
+```
+
+Note that the `data.frame()` function creates factors from our character vector. If you want to avoid this (which is usually the case) by an additional argument telling R not to do that: `data.frame(country, pop, stringsAsFactors = FALSE)`
+
+Access columns by their name. After the `$` sign, press tab and RStudio will give you a list of column in the data frame.
+
+```{r}
+
+df1$population
+```
+
+What just happened?
+
+Kind reminder: R is **case sensitive.** This is annoying at first, but you get used to it fast (as it is a common source of errors).
+
+```{r}
+df1$Population
+```
+
+You can check the attributes of your object with the `attributes` function.
+
+```{r}
+attributes(df1)
+```
+
+
+### 3.3.4 Matrices and arrays
+
+Data frames can contain diverse types of data like factors, numbers and logical values. A matrix is a similarly two-dimensional data object that can contain only one type of value.
+
+Let’s create a matrix that contains three columns with 4 values each. You can create a matrix with the function matrix(), which requires at least the following arguments: a vector of values that make up the matrix, the number of rows, the number of columns.
+
+```{r}
+values1 <- c(1:20)
+mat1 <- matrix(values1, nrow = 5, ncol = 4)
+
+mat1
+```
+
+Matrices can also have row and column names like data frames.
+
+```{r}
+rownames(mat1) <- c("case1", "case2", "case3", "case4", "case5")
+
+mat1
+
+
+colnames(mat1) <- c("Var1", "Var2", "Var3", "Var4")
+
+mat1
+```
+
+> QUICK EXCERCISES:  
+> (1) a) Access the third row of the mat1 matrix, b) access the columns from the second to the fourth (with one line). You should get the result below.  
+> (2) create a data frame with one character vector and two numeric vectors (with a lenght of 3). Have the columns named as first, second, third. Use the `c()`, `data.frame()` and `colnames()` functions!
+
+```{r, echo=FALSE, collapse=FALSE}
+# 1.a) result
+print(mat1[3,])
+
+
+# 1.b) result
+print(mat1[,2:4])
+
+
+```
+
+
+An array is an extension of vectors (and matrices) into three or more dimension. It is easiest to think of this in three dimensions, in which case a three dimensional array would be like matrices with the same numbers of rows and columns stacked one behind another. The argument `dim` for the function `array` indicates the length of each of the dimensions. The below example will create an array with 4 3x3 matrices.
+
+```{r}
+values2 <- c(values1, values1/2)
+a1 <- array(values2, dim=c(3,3,4))
+
+a1
+```
+
+
+### 3.3.5 Lists
+
+You can think of lists as vectors on steroids. Uber vectors. Lists are versatile data structures where each element can be vectors of different lenght and type. What that means is that we can combine our objects that we created in this session into a list with the `list` function.
+
+```{r}
+list1 <- list(logic, country, mat1, text1, a1)
+
+# now let's check this monstrosity
+list1
+```
+
+
+You can add attributes to lists as well. You can check the attributes and also the structure of our list object with the `str()` function.
+
+```{r}
+list2 <- list(letters = letters[1:6], numbers = c(1:3), logical = c(TRUE, TRUE, FALSE, FALSE, TRUE))
+
+attributes(list2)
+
+# the structure function will tell us the type of each element in our list, their lenght and name.
+str(list2)
+```
+
+You can access an item in your list by the single bracket operator `[ ]` or the double bracket operator `[[ ]]`.
+
+> QUICK EXCERCISE: lets select the second item in our list2 with both methods and see what happens. What is the difference?
+
+```{r, collapse=FALSE}
+# single bracket
+list2[2]
+
+
+# double bracket
+list2[[2]]
+```
+
+The single bracket preserves the list format, while the double bracket simplifies our output to a vector. [Hadley Wickham's great illustration](http://r4ds.had.co.nz/lists.html) shows the difference more graphically.
+
+
+
+

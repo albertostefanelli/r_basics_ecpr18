@@ -1,0 +1,500 @@
+---
+title: "Session Five"
+author: "Akos Mate"
+subtitle: "Writing functions and iterating in R"
+date: '2018 July'
+output:
+    html_document:
+        toc: true
+        toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      collapse = TRUE,
+                      comment = "#>",
+                      message = FALSE
+)
+```
+
+# 1. Loops
+
+This session focuses on ways to save time and keystrokes: writing functions and iterations. As a rule of thumb if you find yourself writing (copying) the same code more than twice then it should be a function (or loop). This section will be more focused on base R solutions, so we will write loops, then embed our loops in functions. Then, we will discuss two equivalent to writing loops: the `apply` function family from base R, and the `purrr:map` family from the `tidyverse`.
+  
+  
+Loops are a way of iterating a given operation over a set of different inputs. We start by loading our packages and a subsetted msleep data. 
+
+```{r, echo=FALSE}
+# !diagnostics off
+```
+
+
+```{r}
+library(dplyr)
+library(purrr)
+library(ggplot2)
+```
+
+```{r}
+msleep_df <- msleep %>% 
+    select(name, sleep_total, sleep_rem, awake)
+
+set.seed(2018) # for reproducability
+```
+
+## 1.1 For loops
+
+A for loop looks like:
+
+```{r eval=FALSE}
+for (value in that) {
+this
+}
+```
+
+What a for loop essentially does is that for every `value` in the `that` vector/object, do the `this` operation. It's best to explore this via a very simple excercise. The following  script gives you a very simple code, where we take every element (`i`) (but it could be named anything really) in the `1:5` vector and have the `print()` function print out the values.
+
+
+```{r}
+# simple for loop
+for (i in 1:5) {
+    print(i)
+}
+
+1:5
+
+
+
+# note the different output!
+ 
+
+
+```
+
+We can set up a loop to perform a set of operations on our input vector and put the result in a pre-specified output vector. Let's take the msleep data and compute the mean value for each column.
+
+```{r error=TRUE, warning=TRUE}
+msleep_num <- msleep_df %>%
+    select_if(is.numeric)
+
+ms_colmean <- vector("double", ncol(msleep_num)) # if we know our output lenght we should create a vector with that lenght.
+
+for (i in seq_along(msleep_num)) {
+    ms_colmean[i] <- mean(msleep_num[i])
+}
+
+```
+
+
+Why did we get an error? (think about the difference between `[` and `[[`)
+
+hint:
+```{r}
+msleep_num[2] 
+
+# or
+
+msleep_num[[2]]
+```
+
+
+```{r}
+for (i in seq_along(msleep_num)) {
+    ms_colmean[[i]] <- mean(msleep_num[[i]])
+    print(ms_colmean[i])
+}
+
+
+# to get rid of the NA, use the `na.rm = TRUE` argument.
+
+for (i in seq_along(msleep_num)) {
+    ms_colmean[[i]] <- mean(msleep_num[[i]], na.rm = TRUE)
+    print(ms_colmean[i])
+}
+```
+
+We used the `seq_along` funtion to define our loop sequence (previously we just went with `1:whatever`). Another common way to define the sequence is the `1:lenght(input)`. In the off chance that you create a vector with 0 lenght however, `seq_along` will display a correct output, while `1:lenght(input)` won't.
+
+```{r}
+zero <- vector("double", 0)
+
+1:length(zero)
+
+# vs
+
+seq_along(zero)
+```
+
+Loops can be nested in each other as well. To demonstrate this, we will do a multiplication table (a `10x10` matrix) with a nested for loop.
+
+```{r}
+
+# nested loop for a multiplication table
+# right now it is populated by NA's
+(mult_table <- matrix(NA, nrow = 10, ncol = 10))
+
+num1 <- 1:10 # our input vector
+
+for (i in num1) {               
+    for (j in num1) {           
+        mult_table[i,j] <- i*j 
+    }
+}
+
+mult_table
+
+```
+
+## 1.2 conditions (if, else)
+
+It is a conditional statement, which we can put in a for loop if we want.
+
+```{r eval=FALSE}
+if (this) {
+Plan A
+} else {
+Plan B
+}
+
+```
+
+A quick example(s).
+
+```{r}
+x <- 5
+
+if (x > 5) {
+    print("This is greater than 5")
+} else {
+    print("this not as great as 5 :(")
+}
+
+
+# a more complicated example using multiple if conditions, where we are curious if the input is even or odd. We also want a nicer output with more communication.
+
+input <- c(1:6)
+
+for (i in seq_along(input)){
+     stop_cond <- is.integer(input)
+     if (!stop_cond) {
+         stop("input must be integer!") # given the nature of our test condition, this only works on integers
+     } else {
+         num_test <- input[i]%%2 == 0 # the `%%` operator returns the modulus. if 0 then even, if not, odd.
+         if (num_test) {
+             cat(i, "is even; ") # cat is a more flexible print function, which can combine objects and strings
+         } else {
+             cat(i, "is odd; ")
+         }
+     }
+ }
+```
+
+A more practical example on using conditional statement is to recode a variable. We will create a new column in our curtailed msleep_df data frame and fill it with `NA`'s initially. Then we will create a dummy variable, which is 1 if `sleep_value > 1` AND `awake_value > 18` and 0 if this condition is not met.
+
+```{r}
+# if else condition inside the loop
+msleep_df$new_awake <- NA
+
+for (i in 1:nrow(msleep)) {
+    sleep_value <- msleep_df$sleep_total[i]
+    awake_value <- msleep_df$awake[i]
+    
+    test <- sleep_value > 1 & awake_value > 18
+    
+    if (test) {
+        msleep_df$new_awake[i] <- 1
+    } else {
+        msleep_df$new_awake[i] <- 0
+    }
+}
+
+msleep_df$new_awake
+```
+
+
+> Excercise: recode gapminder gdp variable to below and above average dummy with a loop. The result should be something similar to below.
+
+solution:
+```{r}
+gapminder <- gapminder::gapminder
+
+gapminder$gdp <- NA
+gdp_mean <- mean(gapminder$gdpPercap, na.rm = TRUE)
+
+for (i in 1:nrow(gapminder)) {
+    gdp_test <- gapminder$gdpPercap[i] > gdp_mean
+    
+    if (gdp_test) {
+        gapminder$gdp[i] <- "above"
+    } else {
+        gapminder$gdp[i] <- "below"
+    }
+}
+
+
+# let's double check if our loop works correctly. (don't mind the stringr package for now)
+sum((gapminder$gdpPercap) < mean(gapminder$gdpPercap)) == sum(stringr::str_count(gapminder$gdp, "below"))
+
+```
+
+```{r,}
+head(gapminder, 10)
+```
+
+## 1.3 While loop
+
+```{r eval=FALSE}
+while (condition){
+  # Do whatever is here as long as the condition is TRUE. In each iteration of the loop, the condition much be updated according to a certain logic, and it is evaluated again at the beginning of the loop to decide whether to go through with the next iteration or to stop the loop. 
+}
+```
+
+
+For illustrative purposes, let's rewrite our first little for loop!
+
+
+```{r eval=FALSE}
+i <- 0 # set our initial value
+
+while (i < 5 ) {
+    print(i)
+}
+```
+
+Press the `Esc` to stop our infite loop! What just happened? We need to ensure that at one point, our while condition is met so our loop ends.
+
+```{r}
+
+while (i < 5 ) {
+    print(i)
+    i <- i+1 # this adds +1 to our `i` which then will reach 5 and stop our loop.
+}
+```
+
+
+# 2. Functions
+
+For functions the same logic applies: if you have to copy paste/write the same line twice, think of a way to turn it into a function. The syntax of the `funtion()` function is the following:
+
+```{r eval=FALSE}
+name <- function(variables) {
+    this is where we define our function. 
+}
+```
+
+As with loops, you need to be consistent within your function with the namings of various interim objects, inputs and outputs. To get a feel for creating a function, let's create one, which will exponentiate a choosen base to our choosen exponent.
+
+```{r}
+my_power <- function(base, exp){
+    output <- base ^ exp
+    return(output)
+}
+
+# check out our function
+my_power(base = 2, exp = 6)
+```
+
+Conditional statements within the functions work according to the same logic as in the loops discussed previously. We should add a much needed error message to our function:
+
+```{r}
+# add some error messages to our function with an if else + stop combination
+my_power2 <- function(base, exp){
+    cond <- is.numeric(base)
+    if (!cond) {
+        stop("base must be numeric!")
+    } else {
+        output <- base ^ exp
+        return(output)
+    }
+}
+```
+
+```{r error=TRUE, collapse=FALSE}
+my_power2("2", 4)
+
+# we can experiment, as long as our inputs are numeric:
+my_power2(2, 1:5)
+
+my_power2(1:5, 2)
+```
+
+Or we can simulate a dice roll, with the use of the `sample()` function. If you are interested in how to build such simulations in R, you can check out *Grolemund, Garrett. Hands-On Programming with R: Write Your Own Functions and Simulations. " O'Reilly Media, Inc.", 2014.*
+
+```{r}
+# create a dice rolling function
+roll <- function(){
+    die <- 1:6
+    dice <- sample(die, size = 1, replace = TRUE)
+    
+    return(dice)
+}
+
+roll()
+```
+
+
+> **Quick excercise:** write a function, which standardizes (creates z scores from raw scores) an input vector. The formula for the standardization is: $$z=\frac{x-\bar{x}}{S}$$  
+> where, $x$ is the raw score (numeric value in our input vector) in our sample; $\bar{x}$ is the sample mean; and $S$ is the sample standard deviation.  
+> Use your function on the msleep_df$sleep_rem column  
+> You should get the following output:
+
+Solution:
+```{r}
+z_score <- function(x, sample) {
+    
+    output <- (x-mean(sample, na.rm = TRUE))/sd(sample, na.rm = TRUE)
+    
+    return(output)
+}
+
+# let's check our function with some random, normally distributed data
+height <- rnorm(50, 0, 1)
+
+zscore(height[1:5], height) # it works! 
+```
+
+
+
+It is now time to put our knowledge to good practical use and combine a function and loops. Since we calculate column means frequently, we should just probably write a function for it.
+
+```{r}
+column_mean <- function(df) {
+    output <- vector("double", length(df))
+    for (i in seq_along(df)) {
+        output[i] <- round(mean(df[[i]]),2)
+    }
+    
+    return(output)
+}
+
+column_mean(msleep_df)
+```
+
+If we want to have a more general summary function, we can supply a function as argument to our function (Xzibit would be so proud!)
+
+```{r collapse=FALSE}
+col_summary <- function(df, fun) {
+  out <- vector("double", length(df))
+  for (i in seq_along(df)) {
+    out[i] <- fun(df[[i]])
+  }
+  return(out)
+}
+
+col_summary(msleep_df, sd)
+
+col_summary(msleep_df, median)
+
+```
+
+
+# 3. apply function family
+
+There are several arguments against loops in the R community. They used to be slow (that changed in recent years), so people preferred using the vectorized solution of the `apply` family. There are many task that you can use vectorized operations in R. For example:
+
+```{r collapse=FALSE}
+input2 <- c(1:4)
+
+for (i in seq_along(input2)) {
+    print(i+2)
+}
+
+
+
+# or
+
+(input2 + 2) # if we put the whole operation in () it will print by default after execution.
+
+```
+
+The `apply` family functions are usually very fast, so if you are dealing with large data, they can save considerable time. In this section we'll go over `apply()`, `lapply()`, 
+
+## 3.1 `apply`
+
+The `apply` function let's us apply a function to the rows or columns of our data frame or matrix by adjusting the `MARGIN = ` argument. 1 for row, 2 for column
+
+```{r}
+df <- data.frame(x = rnorm(5),
+                 y = rnorm(5),
+                 z = rnorm(5))
+
+df
+```
+
+```{r}
+# sum over each column
+apply(df, 2, sum)
+
+# sum over each row
+apply(df, 1, sum)
+
+```
+
+We can use it to check the number of missing values in our data frame as well (which is a very useful thing to do). here we "wrap" our function with the `function(x)`, otherwise we'll get an error. When in doubt, you can add `function(x)` even when it is redundant it won't cause any problem
+
+```{r}
+apply(msleep_num, 2, function(x) sum(is.na(x)))
+
+# redundant `function(x)`
+apply(df, 2, function(x) sum(x))
+
+
+```
+
+
+> Quick excercise: Let's calculate the column means of the msleep_num data frame. Use the `apply()` function!  
+> you should get something similar:  
+
+```{r echo=FALSE}
+apply(msleep_num, 2, function(x) mean(x, na.rm = TRUE))
+```
+
+## 3.2 `lapply`
+
+The `lapply` function slightly differs from the `apply`:  
+* It takes two arguments: `lapply(list, function)`
+* It iterates the function over vectors or lists. This means that our output will also be a list.
+
+Let's see what happens when we put a data frame into `lapply`. As a data frame is essentially lists (as columns) put together we get a result for each column (as a list). If we want a vector, we need to embed our `lapply()` function in an `unlist()`.
+```{r}
+# output as list
+lapply(df, sum)
+
+# output as vector
+unlist(lapply(df, sum))
+```
+
+We can use it to create a list where every element is a matrix.
+
+```{r}
+mat_out <- lapply(1:3, function(x) matrix(x, nrow = 5, ncol = 5))
+
+mat_out
+```
+
+
+## 3.3 `sapply`
+```{r}
+sapply(df, sum)
+
+sapply(df, sum, simplify = FALSE)
+
+sapply(msleep_num, function(x) mean(x, na.rm = TRUE))
+```
+
+
+# 4. `purrr` package for iteration
+
+Another way of iterating over our data is the `map` function from the `purrr` package. You can specify what sort of output you want after the `map_` part.
+
+```{r}
+map_dbl(df, mean)
+
+map_dbl(mat_out, mean)
+
+msleep_df %>% 
+    select_if(is.numeric) %>% 
+    map_dbl(mean, na.rm = TRUE)
+```
+
+

@@ -1,0 +1,636 @@
+---
+title: "Session Two"
+subtitle: "Importing and exploring data in R"
+author: "Akos Mate"
+date: '2018 July'
+output:
+    html_document:
+        toc: true
+        toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      collapse = TRUE,
+                      comment = "#>",
+                      message = FALSE
+)
+```
+
+
+> Main packages used: `haven`, `readxl`, `readr` 
+> Main functions covered: `readr::read_csv`, `readxl::read_excel`, `haven::read_stata` `read_spss`, `read_sas`, `write.table()`
+> Supplementary resources: [Data import cheat sheet](https://ugoproto.github.io/ugo_r_doc/data-import.pdf), [R packages for statistical data sets](https://ikashnitsky.github.io/2017/data-acquisition-two/)  
+
+# 1. Importing data into R
+
+## 1.1 Packages for importing data
+
+We saw how we can create data within R, most of the time you need to load your dataset into R to start the analysis. 
+
+At this point we want more than what `base R` can offer to us. Let's install and load some packages! Packages are the cornerstone of the R ecosystem: there are thousands of super useful packages (the most common repository for them is [CRAN](https://cran.r-project.org/)). Whenever you face a specific problem (that can be highly domain specific) there is a good chance that there is at least one package that offers a solution.
+
+To install a package from the CRAN repository we will use the `install.packages()` function. Note that it requres the package's name as a character. After you installed a given package we need to load it to be able to use its functions. We do this by the `library()` command.
+
+It is good practice that you load all the packages at the beggining of your script.
+
+```{r}
+# installing packages 
+
+# install.packages("readr")
+# install.packages("haven")
+# install.packages("readxl")
+# install.packages("httr")
+
+# loading them into R
+library(readr)
+library(haven)
+library(readxl)
+library(httr)
+
+library(gapminder) # the gapminder data
+library(dplyr) # package data manipulation and some summary functions
+library(ggplot2) # data visulization package
+library(psych)
+
+```
+
+
+### 1.1.1 Text (.csv)  
+
+We will look at the [Quality of Government basic data set](https://qog.pol.gu.se/data/datadownloads/qogbasicdata) and import it with different file extensions. First let's load the .csv file (stands for comma separated values). You can either load it from your project folder or directly from the GitHub repo. We are using the `readr` package that can read comma separated values with the `read_csv` function. It is a specific case of the `read_delim` function, where you can specify the character that is used a delimiter (e.g.: in Europe comma is used as a decimal, so the delimiter is often a semicolon.)  
+
+(the codebook for the dataset is here: [https://www.qogdata.pol.gu.se/data/qog_bas_jan18.pdf](https://www.qogdata.pol.gu.se/data/qog_bas_jan18.pdf))
+
+```{r}
+# loading it from the GitHub repository.
+qog_text <- readr::read_csv("https://rawgit.com/aakosm/r_basics_ecpr18/master/qog_bas_cs_jan18.csv")
+
+# loading it from the project folder
+qog_text <- read_delim("data/qog_bas_cs_jan18.csv", delim = ",")
+```
+
+
+With the `readr::read_csv` I specified that I use the function from that specific package. The `package::function` is useful if there are conflicting functions in the loaded packages or you want to make your package use explicit when functions have very similar names. In this case, `base R` also have a `read.csv` function, that is a bit slower than the one in `readr`.
+
+
+### 1.1.2 Excel (.xls and .xlsx)  
+
+Next we are loading the excel file. If you haven't downloaded the file yet from GitHub or from the CEU elearning webpage, the following code will do it. We use the `httr` package's `GET` function to download a file from a url. We use the `readxl` package's `read_excel` function to load the file (it does not support opening files via urls unfortunately).  
+
+```{r}
+# this is the url where I have uploaded the Excel file. We store it in the url object to use it with the GET function
+url <- "https://rawgit.com/aakosm/r_basics_ecpr18/master/qog_bas_cs_jan18.xlsx"
+
+
+# we download the file at the url, and write it into a new file with the write_dist argument.
+GET(url, write_disk("qog_excel.xlsx", overwrite=TRUE))
+
+
+
+# after we are done, let's load the excel file with the `read_excel` function.
+qog_excel <- read_excel("qog_excel.xlsx")
+
+# or just load it directly from your project folder
+qog_excel <- read_excel("qog_bas_cs_jan18.xlsx")
+```
+
+> QUICK EXCERCISE: read the help of the `read_excel` function and import in data to a new object where only the first 5 columns are imported.  
+
+Solution:
+```{r}
+qog_ex <- read_excel("qog_bas_cs_jan18.xlsx", range = "A1:E195")
+```
+
+
+### 1.1.3 Stata (.dta) SPSS (.sav), and SAS (.sas7bdat)
+
+Importing data files from Stata 13+, SPSS, and SAS is similarly easy, using the `haven` package. If you have a data file that is not in these formats (or collaborators who work with weird software choices) you can check the `foreign` and `rio` packages. You also have some capability in `base R` but it is quite picky about software versions (check the `read.` functions).
+
+```{r}
+# read the Stata .dta file
+qog_stata <- read_stata("qog_bas_cs_jan18.dta")
+
+# read the SPSS .sav file
+qog_spss <- read_spss("qog_bas_cs_jan18.sav")
+
+# read the SAS .SAS7BDAT file
+beer_sas <- read_sas("beer.sas7bdat")
+```
+
+
+To remove the unnecesary objects, we can use the `rm()` function.
+```{r}
+rm(beer_sas, qog_excel, qog_stata, qog_spss)
+```
+
+
+Now that we have our data loaded, let's look around.  
+
+### 1.1.4 Importing data from APIs
+
+There are loads of ways to load data to R via APIs, from various sources. This subsection builds on the excellent blogpost of [Data Acquisition in R](https://ikashnitsky.github.io/2017/data-acquisition-two/). We are not going into details (if you are interested, give the linked post a read!).
+
+* The `eurostat` package let's you import data from the...... Eurostat!  
+
+* The `wbstats` is an API for World Bank data  
+
+* The `OECD`package is providing the API for the OECD database  
+
+* The `WID` package is for the World Wealth and Income Database. It is a bit trickier to download though than our trusted `install.packages()`. Since it is not up on the CRAN repository we need to directly download the package from their developers' github page, which contains the source code to it. The `devtools` package allows just that.
+
+```{r, eval=FALSE}
+#install.packages("devtools")
+devtools::install_github("WIDworld/wid-r-tool")
+library(wid)
+```
+
+
+###1.1.5 Exporting data from R
+
+Let's export our Quality of government data out of R. We can use `write.table()` to create a .csv file in our project directory.
+
+```{r, eval=FALSE}
+write.table(qog_text, "qog_export.csv", sep = ",")
+```
+
+
+Or we can use R's own data format, the `.Rda` which is more economical in hard disk space usage. However, if you intend to share your exported data, I'd recommend the .csv output of write.table.  
+
+The peculiarity of `save()` is that it can save any R object, not just a data frame, so if you want to reuse a given object later and do not want to spend computational time recreating it every time, you can save it as well. It will also save the file into your working directory.
+
+```{r, eval=FALSE}
+save(qog_text, file = "qog_rda.Rda")
+```
+
+
+# 2. Summarising and exploring data
+
+> Main packages used: `base`, `ggplot2`, `dplyr` 
+> Main functions covered: `head()`, `tail()`, `dplyr::glimpse()` `str()`, `summary()`, `table()`, `dplyr::group_by` and `summarise()`, `ggplot::ggplot()`
+> Supplementary resources: [ggplot2 cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf) 
+
+
+## 2.1 Overivew and summary statistics
+
+```{r}
+
+
+gapminder_df <- gapminder
+```
+
+
+These data sets are small enough that you can check them in RStudio's data viewer (or with the `View()` function). However, if you have a bigger dataset or smaller memory, it can be problematic. The most basic and quickest way to check if your data loads properly is the `head()` function. It shows you the first few rows and columns. `tail` shows you the end of the data set.
+
+
+```{r collapse=FALSE}
+head(gapminder_df)
+
+
+# if you want to set how many rows to see, just specify it directly.
+head(gapminder_df, 3)
+
+# let's check the end of our data
+tail(gapminder_df)
+
+```
+
+If you want to have a quick overview of your data, both `str()` and `dplyr::glimpse` are helpful.
+
+```{r}
+# these 2 are similar, both shows the overall look of the data set.
+str(gapminder_df)
+
+
+dplyr::glimpse(gapminder_df)
+
+
+```
+
+However, you can use `str()` on any object to see its structure (we'll come back to this later).
+
+
+Now that we know we imported our data properly and have some sense of its dimensions (check what the `dim()` function does!) let's have a more in depth look!
+
+For starters, use `summary()` to check some basic descriptives of our variables.
+```{r}
+summary(gapminder_df)
+
+
+```
+
+
+A little different overview is provided by the `psych::describe()` function. Since it reoports skew and kurtosis it gives us a better estimation on the distribution of our data.
+```{r collapse=FALSE}
+
+describe(gapminder_df)
+
+
+# you can describe your data by groups as well (in this case, grouping by continent)
+describeBy(gapminder_df, gapminder_df$continent)
+
+```
+
+
+For the categorical variables you can use `table()` which generates a frequency table. 
+```{r}
+table1 <- table(gapminder_df$continent)
+
+table1
+```
+
+## 2.2 Using the "tidyverse"
+
+Now we dip into the `tidyverse` with the `dplyr` package.
+
+>disclaimer: I will emphasise `tidyverse` throughout the class, since it is one of the most useful meta-package: a collection of packages that helps to develop consistent workflow from data import to data cleaning to analysis. It is also pushed heavily by RStudio which means robust community engagement and support. We will spend more time on this during the coming days.
+
+![](most_used_package.png)
+[https://stackoverflow.blog/2017/10/10/impressive-growth-r/](*Source: Stack Overflow blog*)
+
+
+
+One key difference is the use of the pipe operator: `%>%` (shortcut: Ctrl + Shift + M). It combines code and makes it more intuitive to work with data. Think of the ` %>% ` as a "then". This is just a short intro, so don't worry if this might be confusing. We will be using `dplyr` and other `tidyverse` packages a lot so you'll have enough time to get comfortable.
+
+```{r}
+# let's see the GDP by continents
+gdp_cont <- gapminder_df %>% # we will use the gapminder data
+    group_by(continent) %>% # then group the data by continent
+    summarise(mean_gdp = mean(gdpPercap)) # then create a `mean_gdp` variable where we compute the mean of the grouped gdpPercap variable.
+
+# let's see the result.
+gdp_cont
+```
+
+You can also create your own summary.
+```{r}
+
+# the number of observations and mean for the GDP per capita variable
+gapminder_df %>% 
+    summarise(n = n(), mean = mean(gdpPercap))
+
+```
+
+> QUICK EXCERCISE: combine the two approach and check the average, minimum, and maximum (hint: use the `mean`, `max()` and `min()` functions) life expectancy by continent. Your result should be like the one below.
+
+
+solution:
+```{r}
+gapminder_df %>% 
+    group_by(continent) %>% 
+    summarise(n = n(), mean = mean(lifeExp), maximum = max(lifeExp), minimum = min(lifeExp))
+
+```
+
+
+## 2.3 Exploration by visualization
+
+Using data visualization is a great way to get acquinted with your data and sometimes it makes more sense than looking at large tables. In this section we (very) briefly go over the basic plotting capabilities of R and then get into the `ggplot2` package which we'll use throughout the class. It is the cutting edge of R's data visualization toolset (not just in academia, but in business and data journalism as well).
+
+The usual workflow (might not work for everyone!) is that for the quick exploratory steps one would use the `base` plots, whereas for more refined figures for articles or other publications `ggplot2` is the tool. Of course `ggplot2` can be perfectly okay for the exploratory phase as well.
+
+### 2.3.1 Introduction to `ggplot2`
+
+We will spend most of our time using `ggplot2` for visualizing in the class and I would personally encourage the course participants to stick to `ggplot2` except for some quick `hist()` and `plot()` here and there.
+
+The name stands for *grammar of graphics* and it enables you to build your plot layer by layer and having the ability to control every detail of the output  (if you so wish). It is used by many in academia, by the Financial Times and FiveThirtyEight writers, among many others.
+
+You create plots with the below syntax:  
+
+```{r, out.width = "300px", echo=FALSE}
+knitr::include_graphics("ggplot-formula-schematic.png")
+```
+    
+
+*Source: Kieran, Healy. Data Visualisation: A Practical Introduction. PRINCETON University Press, 2018. [(Ch.3)](http://socviz.co/makeplot.html#how-ggplot-works)*
+
+
+To have some idea about our variables, lets plot them on a histogram. First, we examine the GDP per capita variable from our gapminder dataset. TO this, we just use the `geom_histogram()` function of `ggplot2`. It gives a bare-bones histogram of the  (frequency distribution of our choosen continous variable) of the choosen variable.
+
+Let's create the foundation of our plot by specifying for `ggplot` the data we use and the variable we want to plot.
+
+```{r}
+p_hist <- ggplot(data = gapminder_df,
+                 mapping = aes(x = gdpPercap))
+
+# what happens if we just use this?
+p_hist
+```
+
+
+We need to specify what sort of shape we want our data to be displayed. We can do this by adding the `geom_histogram()` function with a `+`
+
+```{r}
+p_hist + 
+    geom_histogram()
+```
+
+
+Looks a little bit skewed. Let's log transform our variable with the `scale_x_log10()` function.
+
+```{r, message=TRUE}
+p_hist + 
+    geom_histogram(binwidth = 0.05) +
+    scale_x_log10()
+```
+
+As the message says, we can mess around with the binwidth argument, so let's do that.
+
+```{r}
+p_hist + 
+    geom_histogram() +
+    scale_x_log10()
+```
+
+
+Of course if one prefers a boxplot, that is possible as well. We will check how life expectancy varies between and within continents. We'll use `geom_boxplot()`.
+
+```{r}
+p_box <- ggplot(data = gapminder_df,
+                mapping = aes(x = continent,
+                              y = lifeExp))
+
+p_box + geom_boxplot()
+```
+
+
+Interpretation of the box plot is that the following. The box contains 50% of the values, the whiskers are the minimum and maximum values without the outliers, the line inside the box is the median. The upper and lower edges of the box are the first and third quartiles, respectively.
+
+In visual form:
+
+```{r, out.width = "700px", echo=FALSE}
+knitr::include_graphics("EDA-boxplot.png")
+```
+
+*Source: [Wickham, Hadley, and Garrett Grolemund. R for data science: import, tidy, transform, visualize, and model data. " O'Reilly Media, Inc.", 2016.](http://r4ds.had.co.nz/exploratory-data-analysis.html)*
+
+
+To use barplot instead we just simply switch to the `geom_bar()`.
+
+```{r error=TRUE}
+p_box + geom_bar()
+```
+
+Ooops. ggplot's `geom_bar()` wants to carry out a counting excercise that is not able to run if we have a y variable specified. We can solve this in two ways. First, let's tell ggplot that it should not do any additional calculations, by specifying it with the `stat = "identity"`. Second, we can use the `geom_col` geom, which already assumes the "identity" argument.
+
+```{r collapse=FALSE}
+# using stat = "identity"
+p_box + geom_bar(stat = "identity")
+
+
+# using geom_col
+p_box + geom_col()
+
+```
+
+
+
+Let's use the gapminder dataset we have loaded and investigate the life expectancy and gdp per capita variables. We'll use the `geom_point()` argument which we join to the `p1` object with a `+`.
+
+```{r}
+p1 <- ggplot(data = gapminder_df,
+             mapping = aes(x = gdpPercap,
+                           y = lifeExp))
+
+
+p1 + geom_point()
+```
+
+Let's refine this plot slightly: add labels, title, caption, and also transform the GDP variable. (plus some other minor cosmetics)
+
+```{r}
+p1 + geom_point(alpha = 0.25) + # inside the geom_ we can modify its attributes. Here we set the transparency levels of the points
+    scale_x_log10() + # rescale our x axis
+    labs(x = "GDP per capita", 
+         y = "Life expectancy",
+         title = "Connection between GDP and Life expectancy",
+         subtitle = "Points are country-years",
+         caption = "Source: Gapminder")
+```
+
+So far so good. With some minor additions the plot looks all right. But what if we want to see how each continent fares in this relationship? We need to change the `p1` object to include a new argument in the mapping function: `color = variable`. Now it is clear that European countries (country-years) are clustered in the high-GDP/high life longevity upper right corner.
+
+```{r}
+p1_grouped <- ggplot(data = gapminder_df,
+             mapping = aes(x = gdpPercap,
+                           y = lifeExp,
+                           color = continent)) # this is where we specify that we want to color the data by continents.
+
+p1_grouped + geom_point(alpha = 0.5) + # inside the geom_ we can modify its attributes. Here we set the transparency levels of the points
+    scale_x_log10() + # rescale our x axis
+    labs(x = "GDP per capita", 
+         y = "Life expectancy",
+         title = "Connection between GDP and Life expectancy",
+         subtitle = "Points are country-years",
+         caption = "Source: Gapminder")
+
+```
+
+
+When we are done with our nice figure, we can save it as well. I'd suggest to always save with code, and never from the "plots" pane on the right.
+
+```{r}
+ggsave("gapminder_scatter.png", dpi = 600) # the higher the dpi, the smoother your plot'll look like.
+```
+
+
+> **Quick excercise:**    
+> 1. Load the data: `sw <- starwars`  
+> 2. Explore it a little bit with some of the approaches that we've covered
+> 3. create a scatter plot by using `geom_point()` of the connection between height and mass of the Star Wars dataset. Let the points be colored by the gender of the character. The output should look like something like this. If you want to get rid of the outlier in the character mass data, you can subset the Star Wars data, for characters with < 1000 (use the `subset(sw, mass < 1000)` function.  
+
+Solution:
+```{r}
+sw <- starwars
+
+glimpse(sw)
+
+sw_no_outlier <- subset(sw, mass < 1000)
+
+p_sw <- ggplot(sw_no_outlier, aes(height, mass, 
+                       color = gender))
+
+p_sw + geom_point(alpha = 0.5) +
+    labs(y = "Mass of characters", x = "Height of characters",
+         title = "The connection between mass and height in the Star Wars universe")
+```
+
+We can see how life expectancy changed in Mexico, Afghanistan, Sudan and Slovenia by using the `geom_line()` geom. For this, we create a new dataset by subsetting the gapminder one. The `%in%` operator does the same thing as the `==` but for multiple values.
+
+```{r}
+#subset the dataset to have our selected countries
+comp_df <- subset(gapminder_df, country %in% c("Mexico", "Afghanistan", "Sudan", "Slovenia"))
+
+# create the ggplot object with the data and mapping info
+p_line <- ggplot(data = comp_df,
+                  mapping = aes(x = year,
+                                y = lifeExp,
+                                color = country))
+
+# tell ggplot what sort of plot we are looking for.
+p_line + geom_line(aes(group = country)) # we need to tell ggplot that we want to group our lines by countries
+```
+
+
+`ggplot2` makes it easy to create individual subplots for each category by "faceting" our data. Let's plot the growth in life expectancy over time on each continent. We use the `geom_line()` function to draw a line and we tell ggplot to facet by adding the `facet_wrap(~ variable)` function.
+
+```{r}
+p_facet <- ggplot(data = gapminder_df,
+                  mapping = aes(x = year,
+                                y = lifeExp))
+
+p_facet + geom_line(aes(group = country)) + # we need to tell ggplot that we want to group our lines by countries
+    facet_wrap(~ continent) # this creates the subplots for each continent.
+
+```
+
+
+
+### 2.3.2 The `base R` toolkit
+
+To have some idea about our variables, lets plot them on a histogram. First, we examine the GDP per capita variable from our `gapminder` dataset. TO this, we just use the `hist()` function. It gives a bare-bones plot of the histogram (frequency distribution of our choosen continous variable)
+
+```{r}
+# histogram indicates that our data is not normally distributed.
+hist(gapminder_df$gdpPercap)
+
+# maybe transforming it would help
+hist(log(gapminder_df$gdpPercap))
+```
+
+If the plot is shared with some collaborators, maybe some formatting could help. We can change the  the 'breaks' to have a more granular view of our data. To turn off scientific notation, let's use the `options(scipen=5)`.
+
+```{r}
+hist(gapminder_df$gdpPercap, breaks = 30)
+```
+
+```{r}
+options(scipen=5)
+
+# you can also control the breakpoints beyond giving it a simple value.
+hist(gapminder_df$gdpPercap, breaks = seq(0, 120000, 1500))
+```
+
+```{r echo=FALSE}
+hist(gapminder_df$lifeExp,
+     breaks = seq(20, 90, 5),
+     ylim = c(0,350),
+     main = "Distribution of life expectancy",
+     xlab = "Years")
+```
+
+
+> QUICK EXCERCISE: let's plot the distribution of the life expectancy variable (lifeExp) from the gapminder dataset. Use the `xlab` argument to set a meaningful label for the x axis, and use the `main` argument to set a title for the plot (you can set it to `NA` to omit the title). For bonus, try to adjust the y axis to match the tallest bin's height with the `ylim()` argument (discuss how this is related to the `breaks` argument and how can it shape the representation of your data). If you get stuck, remember: `?hist()`
+
+For categorical variable, we should use a barplot. To see how many observation we have for each continent, let's use the `barplot`. We can use the `table()` function to see how many observations there are in each category and then plot that object.
+
+
+```{r}
+cont_table <- table(gapminder_df$continent)
+
+barplot(cont_table, main = "Number of observations by continents")
+```
+
+For continuous data, we can use the generic `plot()` function.
+
+```{r}
+# to check how life expectancy changed in Mexico, we can subset our dataset and then plot the result. More on subsetting tomorrow!
+
+mexico <- subset(gapminder_df, country == "Mexico")
+
+# the first argument of the plot is the x axis, second is the y axis. 
+plot(mexico$year, mexico$lifeExp)
+```
+
+Something is not quite right...
+
+```{r}
+# check how we can change the dots to a line.
+# ?plot
+
+# We should add `type`. Also we can structure our function to be a bit more readable.
+
+plot(mexico$year, mexico$lifeExp, 
+     xlab = "Year", 
+     ylab = "Life expectancy (Years)",
+     col = "orange",
+     type = "l")
+```
+
+> QUICK EXCERCISE: let's check if life expectancy and GDP per capita are related. (the x-axis should be the gdpPercap, the y-axis the lifeExp. For better results, try `log()` transforming the gdpPercap! You should get something like this.)
+
+```{r echo=FALSE}
+plot(log(gapminder_df$gdpPercap),
+     gapminder_df$lifeExp,
+     xlab = "Log GDP per capita",
+     ylab = "Life expectancy",
+     main = "Relationship between GDP and life expectancy",
+     type = "p")
+```
+
+
+To see how each variable is associated with the other, we can use the `pair()` function. It will create a scatter plot matrix, where the variable name is on the diagonal. In the rows the vertical axis is the variable indicated in the diagonal and in the columns the horizontal axis is the variable indicated in the diagonal.
+
+```{r}
+pairs(gapminder_df[,c("lifeExp", "pop", "gdpPercap")])
+```
+
+We can make the plots a little nicer, by adjusting the points. (this can be done for the previous scatterplots as well!). `pch = 19` selects a point type which is filled, then with `col = rgb()` we can specify the exact color that we are looking for. The `alpha` argument regulates the transparency of the points.
+
+```{r, out.width = "400px", echo=FALSE}
+knitr::include_graphics("pch-values.png")
+```
+
+*source: [http://kktg.net/sgr/wp-content/uploads/2014/02/fig-15-3-pch-values.png](http://kktg.net/sgr/wp-content/uploads/2014/02/fig-15-3-pch-values.png)*
+
+```{r}
+pairs(gapminder_df[,c("lifeExp", "pop", "gdpPercap")],
+      pch=19, 
+      col=rgb(0,0,0, alpha=0.1))
+```
+
+
+
+The formula for the boxplot is instructing R to create a boxplot for each continent for the numerical variable of lifeExp. In general term, the formula is `y ~ group`.  
+
+
+```{r}
+boxplot(lifeExp ~ continent, data = gapminder_df,
+        main = "Distribution of life expectancy by continent",
+        xlab = "Continents",
+        ylab = "Life expectancy")
+```
+
+  
+We can also do a grouped bar plot. For this we will use the star wars dataset and do a grouped bar plot of the eye color and gender in star wars movies. The logic is the same as for the barplot with a single variable, but now we add two for the `table()` function. We also add a legend to our plot with the `legend()` function.
+
+```{r}
+# grouped bar plot
+
+# load the data
+sw <- starwars
+
+
+# create the table with the two variables of interest
+sw_table <- table(sw$gender, sw$eye_color)
+
+sw_table
+
+
+# plot the grouped barplot. Mind the `beside` argument! We can also add a legend, so the colors are straightforward.
+barplot(sw_table,
+        beside = TRUE,
+        col = c("orange", "brown", "green", "black"))
+legend(x = "topright",
+       legend = c("Female", "Hermaphrodite", "Male", "None"),
+       fill = c("orange", "brown", "green", "black"),
+       cex = 0.7)
+```
+
+If you want to have the proportional numbers, we can use the `prop.table()` function. If we use the sw_table table as the only argument, the we will get proportions of the total. If we use 1 as the second argument, we get proportions of rows and if we use 2, we get proportions of columns. Remember, rows come first and columns second!
+
+
+
+
+
+

@@ -1,0 +1,563 @@
+---
+title: "Session Six"
+author: "Akos Mate"
+subtitle: "Data visualisation with `ggplot2`"
+date: '2018 July'
+output:
+    html_document:
+        toc: true
+        toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      collapse = TRUE,
+                      comment = "#>",
+                      message = FALSE
+)
+```
+
+
+# 1. Data visualisation principles
+
+Minimize noise, maximize signal in your graphs (or put it in other ways: maximize the data-ink ratio):
+
+```{r, out.width = "350px", echo=FALSE}
+knitr::include_graphics("data-ink.gif")
+```
+    
+*source: [Darkhorse Analytics](https://www.darkhorseanalytics.com/blog/data-looks-better-naked)*
+
+
+
+
+* avoid chart junk
+* Choose the type of plot depending on the type of data
+* label chart elements properly and informatively
+* ideally both x and y axis starts at 0 (scales can be *really* deceiving otherwise)
+* use consistent units! (do not mix yearly and month GDP for example)
+* ABSOLUTELY NO 3D PIE CHARTS. (When someone does 3D pie charts God makes a kitten cry.)
+
+
+
+Me, seeing 3D charts (I am trigerred equally no matter the sub genre):  
+
+![](https://media.giphy.com/media/12XMGIWtrHBl5e/giphy.gif)
+  
+
+
+
+  
+# 2. `ggplot2`
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggridges)
+library(ggthemes)
+library(gapminder)
+```
+
+
+```{r}
+# data
+iris_df <- iris
+summary(iris_df)
+
+data("diamonds")
+summary(diamonds)
+
+data(mpg)
+summary(mpg)
+
+# sample our diamonds data, so it works faster
+diamonds_df <- dplyr::sample_n(diamonds, 250)
+
+```
+
+
+Refresher: syntax of the `ggplot2` plots:
+
+```{r, out.width = "550px", echo=FALSE}
+knitr::include_graphics("ggplot-formula-schematic.png")
+```
+
+During this session we will go through various types of data visualisations and try to apply the above set principles to our output. Altough we already have some experience with various plots, during this session we will start modifying parts of our plot beyond the title and axis labels.
+
+
+## 2.1 scatter plot
+
+We use scatter plot to illustrate some association between two continuous variable. Usually, the `y` axis is our dependent variable (the variable which is explained) and `x` is the independent variable, which we suspect that drives the association. (this is not a stats course, but the mandatory: correlation != causation applies!).
+
+Now, we want to know what is the association between the carat and price of a diamond.
+
+```{r}
+ggplot(diamonds_df,
+             mapping = aes(x = carat,
+                           y = price)) +
+    geom_point()
+```
+
+Now that we have a basic figure, let's make it better.
+
+```{r}
+ggplot(diamonds_df,
+             mapping = aes(x = carat,
+                           y = price)) +
+    geom_point(aes(shape = cut)) # we can add additional dimensions, in this case we want to include info from the cut variable.
+```
+
+
+
+To add some analytical power to our plot we can use `geom_smooth()` and choose a `method` for it's smoothing function. It can be `lm`, `glm`, `gam`, `loess`, and `rlm`. We will use the linear model ("lm").
+
+
+```{r}
+ggplot(diamonds_df,
+             mapping = aes(x = carat,
+                           y = price)) +
+    geom_smooth(color = "orange", se = TRUE, method = "lm") + # adding the smoothed line. we can set the color, size and the `standard error` ribbon by the se argument
+    geom_point(alpha = 0.3)  # setting the points' transparency
+      
+```
+
+We can have colors by cut categories as well (as we did in the previous session)
+
+```{r}
+ggplot(diamonds_df,
+             mapping = aes(x = carat,
+                           y = price,
+                           color = cut)) + # add the cut variable as color coding into our plot
+    geom_smooth(color = "black", se = TRUE, method = "lm") +
+    geom_point(alpha = 0.3)
+```
+
+
+
+We add horizontal line or vertical line to our plot, if we have a particular cutoff that we want to show. We can add these with the `geom_hline()` and `geom_vline()` functions.
+
+```{r}
+ggplot(diamonds_df,
+             mapping = aes(x = carat,
+                           y = price)) +
+    geom_point(aes(shape = cut)) +
+    geom_vline(xintercept = 2) + # adding vertical line 
+    geom_hline(yintercept = 15000, linetype = "dashed", color = "orange", size = 0.5) # adding horizontal line, and modifying it a bit
+```
+
+
+
+## 2.2 histogram
+
+Using histograms to check the distribution of your data.
+
+```{r}
+ggplot(diamonds_df,
+       mapping = aes(x = carat)) +
+    geom_histogram() 
+```
+
+```{r}
+ggplot(diamonds_df,
+       mapping = aes(x = carat)) +
+    geom_histogram(binwidth = 0.1, color = "black", fill = "orange") # we can set the colors and border of the bars and set the binwidth or bins
+```
+
+
+We can overlay more than one histogram on each other. See how different iris species have different sepal length distribution.
+```{r}
+ggplot(data = iris_df,
+       mapping = aes(x = Sepal.Length,
+                     fill = Species)) +
+    geom_histogram(binwidth = 0.1, position = "identity", alpha = 0.65) # using the position option so we can see all three variables
+           
+```
+
+## 2.3 density plots
+
+A variation on histograms is called density plots that uses Kernel smoothing (fancy! but in reality is a smoothing function which uses the weighted averages of neighboring data points.)
+
+```{r}
+ggplot(iris_df,
+       mapping = aes(x = Sepal.Length)) +
+    geom_density()
+```
+
+Add some fill
+```{r}
+ggplot(iris_df,
+       mapping = aes(x = Sepal.Length)) +
+    geom_density(fill = "orange", alpha = 0.3)
+```
+
+Your intutition is correct, we can overlap this with our histogram
+
+```{r}
+ggplot(diamonds_df,
+       mapping = aes(x = carat)) +
+    geom_histogram(aes(y = ..density..),
+                   binwidth = 0.1,
+                   fill = "white",
+                   color = "black") +# we add this so the y axis is density instead of count.
+    geom_density(alpha = 0.25, fill = "orange")
+
+```
+
+And similarly to the historgram, we can overlay two density plot as well.
+
+```{r}
+ggplot(iris_df,
+       mapping = aes(x = Sepal.Length,
+                     fill = Species)) +
+    geom_density(alpha = 0.5)
+```
+
+
+## 2.3.1 ridgeline/joyplot
+
+This one is quite spectacular looking *and* informative. It has a similar function as the overlayed histograms but presents a much clearer data. For this, we need the `ggridges` package which is a `ggplot2` extension.
+
+```{r}
+ggplot(data = iris_df,
+       mapping = aes(x = Sepal.Length,
+                     y = Species)) +
+    geom_density_ridges(scale = 0.8, alpha = 0.5)
+```
+
+## 2.4 bar charts
+
+We can use the bar charts to visualise categorical data.
+
+```{r}
+ggplot(data = mpg,
+       mapping = aes(x = class)) +
+    geom_bar()
+
+```
+
+We can use the `fill` option to map another variable onto our plot. Let's see how these categories are further divided by the type of transmission (front, rear, 4wd). By default we get a stacked bar chart.
+
+```{r}
+ggplot(data = mpg,
+       mapping = aes(x = class,
+                     fill = drv)) +
+    geom_bar()
+
+```
+
+we can use the `position` function in the `geom_bar` to change this.
+```{r}
+ggplot(data = mpg,
+       mapping = aes(x = class,
+                     fill = drv)) +
+    geom_bar(position = "dodge")
+
+```
+
+Let's make sure that the bars are proportional. For this we can use the `y = ..prop..` and `group = 1` arguments, so the y axis will be calculated as proportions. The `..prop..` is a temporary variable that has the `..` surrounding it so there is no collision with a variable named prop.
+
+```{r}
+ggplot(data = mpg,
+       mapping = aes(x = class)) +
+    geom_bar(aes(y = ..prop.., group = 1))
+
+
+ggplot(data = mpg,
+       mapping = aes(x = class,
+                     fill = drv)) +
+    geom_bar(position = "dodge",
+             mapping = aes(y = ..prop.., group = drv),
+             color = "black")
+
+```
+
+Maybe it is best to facet by drv.
+
+```{r}
+ggplot(data = mpg,
+       mapping = aes(x = class)) +
+    geom_bar(position = "dodge",
+             mapping = aes(y = ..prop.., group = drv),
+             color = "black") +
+    facet_wrap(~drv, ncol = 2)
+```
+
+
+### 2.4.1 Lollipop charts
+
+The lollipop chart is a better barchart in a sense that it conveys the same information with better data/ink ratio. It also looks better.
+
+For this we will modify a chart from the [Data Visualisation textbook](http://socviz.co/groupfacettx.html#avoid-transformations-when-necessary)
+
+
+```{r}
+load("oecd_sum.rda")
+
+p <- ggplot(data = oecd_sum,
+       mapping = aes(x = year, y = diff, color = hi_lo)) 
+
+
+p + geom_segment(aes(y = 0, x = year, yend = diff, xend = year)) +
+    geom_point() +
+    theme(legend.position="none") +
+    labs(x = NULL, y = "Difference in Years",
+       title = "The US Life Expectancy Gap",
+       subtitle = "Difference between US and OECD
+                   average life expectancies, 1960-2015",
+       caption = "Adapted from Kieran Healy: Data Visualisation, fig.4.21 ")
+
+```
+
+
+## 2.5 box plot
+
+```{r}
+ggplot(data = iris_df,
+       mapping = aes(x = Species,
+                     y = Sepal.Length)) +
+    geom_boxplot()
+
+```
+
+
+We add color coding to our boxplots as well.
+
+```{r}
+
+ggplot(data = iris_df,
+       mapping = aes(x = Species,
+                     y = Sepal.Length,
+                     fill = Species)) +
+    geom_boxplot(alpha = 0.5)
+```
+
+
+
+## 2.6 violin chart
+
+```{r}
+ggplot(data = iris_df,
+       mapping = aes(x = Species,
+                     y = Sepal.Length)) +
+    geom_violin()
+```
+
+# 3. Themes and plot elements
+
+## 3.1 Themes
+In this section we will go over some of the elements that you can modify in order to get an informative and nice looking figure. `ggplot2` comes with a number of themes. You can play around the themes that come with `ggplot2` and you can also take a look at the `ggthemes` package, where I included the economist theme. Another notable theme is the `hrbthemes` package.
+
+```{r echo=FALSE}
+p1 <- ggplot(data = diamonds_df,
+             mapping = aes(x = carat,
+                           y = price)) +
+    labs(title = "ggplot default") +
+    geom_point()
+
+p2 <- ggplot(data = diamonds_df,
+             mapping = aes(x = carat,
+                           y = price)) +
+    geom_point() +
+    labs(title = "theme_bw") +
+    theme_bw()
+
+p3 <- ggplot(data = diamonds_df,
+             mapping = aes(x = carat,
+                           y = price)) +
+    geom_point() +
+    labs(title = "theme_minimal") +
+    theme_minimal()
+
+p4 <- ggplot(data = diamonds_df,
+             mapping = aes(x = carat,
+                           y = price)) +
+    geom_point() +
+    labs(title = "theme_economist") +
+    theme_economist()
+
+gridExtra::grid.arrange(p1, p2, p3, p4, nrow = 2, ncol = 2)
+```
+
+The black and white theme. Try out a couple to see what they differ in! The `ggthemes` package has a nice collection of themes to use.
+```{r}
+ggplot(data = diamonds_df,
+             mapping = aes(x = carat,
+                           y = price)) +
+    geom_point() +
+    labs(title = "theme_bw") +
+    theme_bw()
+```
+
+
+## 3.2 Plot elements
+
+Of course we can set all elements to suit our need, without using someone else's theme.
+
+The key plot elements that we will look at are:  
+
+* labels
+* gridlines
+* fonts
+* colors
+* legend
+* axis breaks
+
+Adding labels, title, as we did before.
+```{r}
+ggplot(diamonds_df,
+             mapping = aes(x = carat,
+                           y = price,
+                           color = cut)) + 
+    geom_point(alpha = 0.3) +
+    labs(title = "Diamonds are our best friends",
+         subtitle = "Connection between the carat and the price of diamonds",
+         x = "Carat",
+         y = "Price (USD)",
+         color = "Cut") # title of the legend
+```
+
+Let's use a different color scale! We can use a color brewer scale (widely used for data visualization).
+
+```{r}
+ggplot(diamonds_df,
+             mapping = aes(x = carat,
+                           y = price,
+                           color = cut)) + 
+    geom_point(alpha = 0.3) +
+    scale_color_brewer(name = "Cut", palette = "Set1") + # adding the color brewer color scale
+    labs(title = "Diamonds are our best friends",
+         subtitle = "Connection between the carat and the price of diamonds",
+         x = "Carat",
+         y = "Price (USD)",
+         color = "Cut")
+```
+
+Or we can define our own colors:
+
+```{r}
+ggplot(diamonds_df,
+             mapping = aes(x = carat,
+                           y = price,
+                           color = cut)) + 
+    geom_point(alpha = 0.3) +
+    scale_color_manual(values=c("red", "blue", "orange", "black", "green")) + # adding our manual color scale
+    labs(title = "Diamonds are our best friends",
+         subtitle = "Connection between the carat and the price of diamonds",
+         x = "Carat",
+         y = "Price (USD)",
+         color = "Cut")
+```
+
+
+To clean up clutter, we will remove the background, and only leave some of the grid behind. We can hide the tickmarks with modifying the `theme()` function, and setting the `axis.ticks` to `element_blank()`.
+
+```{r}
+ggplot(diamonds_df,
+             mapping = aes(x = carat,
+                           y = price,
+                           color = cut)) + 
+    geom_point(alpha = 0.3) +
+    labs(title = "Diamonds are our best friends",
+         subtitle = "Connection between the carat and the price of diamonds",
+         x = "Carat",
+         y = "Price (USD)") +
+    theme(axis.ticks = element_blank()) # removing axis ticks
+    
+    
+```
+
+Hiding gridlines also requires some digging in the `theme()` function with the `panel.grid.minor` or .major functions. If you want to remove a gridline on a certain axis, you can specify `panel.grid.major.x`. We can also set the background to nothing. Furthermore, we can define the text attributes as well in our labels.
+
+```{r}
+ggplot(diamonds_df,
+             mapping = aes(x = carat,
+                           y = price,
+                           color = cut)) + 
+    geom_point(alpha = 0.3) +
+    labs(title = "Diamonds are our best friends",
+         subtitle = "Connection between the carat and the price of diamonds",
+         x = "Carat",
+         y = "Price (USD)") +
+    theme(axis.ticks = element_blank(),
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank()) # removing the background 
+            
+    
+    
+```
+
+```{r}
+ggplot(diamonds_df,
+             mapping = aes(x = carat,
+                           y = price,
+                           color = cut)) + 
+    geom_point(alpha = 0.3) +
+    labs(title = "Diamonds are our best friends",
+         subtitle = "Connection between the carat and the price of diamonds",
+         x = "Carat",
+         y = "Price (USD)") +
+    theme(axis.ticks = element_blank(),
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(),
+          legend.title = element_text(size = 12), # setting the legends text size
+          text = element_text(face = "plain", family = "serif")) # setting global text options for our plot
+            
+    
+```
+
+
+Finally, let's move the legend around. Or just remove it with `theme(legend.position="none")`
+
+```{r}
+ggplot(diamonds_df,
+             mapping = aes(x = carat,
+                           y = price,
+                           color = cut)) + 
+    geom_point(alpha = 0.3) +
+    labs(title = "Diamonds are our best friends",
+         subtitle = "Connection between the carat and the price of diamonds",
+         x = "Carat",
+         y = "Price (USD)") +
+    theme(axis.ticks = element_blank(),
+          panel.grid.minor = element_blank(), 
+          panel.background = element_blank(),
+          legend.title = element_text(size = 12), 
+          text = element_text(face = "plain", family = "serif"),
+          legend.background = element_blank(),
+          legend.position = "bottom")
+    
+```
+
+
+While we are at it, we want to have labels for our data. For this, we'll create a plot which can exploit this.
+
+What we use is the `geom_text` to have out labels in the chart.
+
+```{r}
+gapminder <- gapminder %>% 
+    filter(year == 2002, continent == "Europe")
+
+
+ggplot(gapminder, aes(lifeExp, gdpPercap, label = country)) + # we add the labels!
+    geom_point() +
+    geom_text() # and use the geom text
+
+```
+
+notice the different outcome of `geom_label` instead of `geom_text`.
+
+```{r}
+ggplot(gapminder, aes(lifeExp, gdpPercap, label = country)) + # we add the labels!
+    geom_point() +
+    geom_label() # and use the geom label
+```
+
+If we want to label a specific set of countries we can do it from inside ggplot, without needing to touch our data.
+
+```{r}
+ggplot(gapminder, aes(lifeExp, gdpPercap, label = country)) + # we add the labels!
+    geom_point() +
+    geom_text(aes(label = if_else(lifeExp > 80, country, NULL)), nudge_x = 0.5) # we add a conditional within the geom. Note the nudge_x!
+```
+
+
