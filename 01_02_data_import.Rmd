@@ -7,6 +7,8 @@ output:
     html_document:
         toc: true
         toc_depth: 3
+        theme: readable
+        css: style.css
 ---
 
 ```{r setup, include=FALSE}
@@ -18,9 +20,9 @@ knitr::opts_chunk$set(echo = TRUE,
 ```
 
 
-> Main packages used: `haven`, `readxl`, `readr` 
-> Main functions covered: `readr::read_csv`, `readxl::read_excel`, `haven::read_stata` `read_spss`, `read_sas`, `write.table()`
-> Supplementary resources: [Data import cheat sheet](https://ugoproto.github.io/ugo_r_doc/data-import.pdf), [R packages for statistical data sets](https://ikashnitsky.github.io/2017/data-acquisition-two/)  
+> Main packages used: `haven`, `readxl`, `readr`   
+> Main functions covered: `readr::read_csv`, `readxl::read_excel`, `haven::read_stata` `read_spss`, `read_sas`, `write.table()`  
+> Supplementary resources: [Data import cheat sheet](https://ugoproto.github.io/ugo_r_doc/data-import.pdf), [R packages for statistical data sets](https://ikashnitsky.github.io/2017/data-acquisition-two/)    
 
 # 1. Importing data into R
 
@@ -166,9 +168,9 @@ save(qog_text, file = "qog_rda.Rda")
 
 # 2. Summarising and exploring data
 
-> Main packages used: `base`, `ggplot2`, `dplyr` 
-> Main functions covered: `head()`, `tail()`, `dplyr::glimpse()` `str()`, `summary()`, `table()`, `dplyr::group_by` and `summarise()`, `ggplot::ggplot()`
-> Supplementary resources: [ggplot2 cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf) 
+> Main packages used: `base`, `ggplot2`, `dplyr`   
+> Main functions covered: `head()`, `tail()`, `dplyr::glimpse()` `str()`, `summary()`, `table()`, `dplyr::group_by` and `summarise()`, `ggplot::ggplot()`  
+> Supplementary resources: [ggplot2 cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf)   
 
 
 ## 2.1 Overivew and summary statistics
@@ -559,7 +561,7 @@ plot(mexico$year, mexico$lifeExp,
 
 > QUICK EXCERCISE: let's check if life expectancy and GDP per capita are related. (the x-axis should be the gdpPercap, the y-axis the lifeExp. For better results, try `log()` transforming the gdpPercap! You should get something like this.)
 
-```{r echo=FALSE}
+```{r}
 plot(log(gapminder_df$gdpPercap),
      gapminder_df$lifeExp,
      xlab = "Log GDP per capita",

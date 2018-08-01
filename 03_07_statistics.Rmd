@@ -1,12 +1,15 @@
 ---
 title: "Session Seven"
+subtitle: "Doing statistics in R"
 author: "Akos Mate"
 date: "2018 July"
 output:
   html_document:
     toc: yes
     toc_depth: 3
-subtitle: Doing statistics in R
+    theme: readable
+    css: style.css
+
 ---
 
 ```{r setup, include=FALSE}
@@ -90,7 +93,7 @@ In this case we can see that the p-value of the test statistic is way below 0.05
 
 > Quick excercise: let's load the iris dataset and see if the difference between the petal lenght between the setosa and versicolor are statistically significant or not. Tip: use the previously learned filter() function from dplyr to prep the data. You should get something similar as below. Load the iris data with `data(iris)`. You can turn the scientific notation off with `options(scipen = 999)`.
 
-```{r, echo=FALSE}
+```{r}
 iris_t_prep <- iris %>% 
     filter(Species == c("setosa", "versicolor"))
 
@@ -110,9 +113,11 @@ Anova is implemented in R with the `aov()` function and at its simplest the usag
 
 
 ```{r}
-options(scipen=5)
 
 anova1 <- aov(Sepal.Width~Species, data=iris)
+
+anova1
+
 summary(anova1)
 ```
 
@@ -120,7 +125,7 @@ The most important information to look for here is the F value and the associate
 
 > Quick excercise: load the `airquality` data from the `survey` package (with `data(airquality)`) and test with anova if the monthly mean temepratures are significantly different from each other. The temperature is `Temp` and the monhts are `Month`. How would you interpret the result?
 
-```{r, echo=FALSE}
+```{r}
 data(airquality)
 anova2 <- aov(Temp~Month, data=airquality)
 summary(anova2)
@@ -153,6 +158,7 @@ The `cor()` function is useful, because it provides the possibility to look at m
 
 ```{r}
 cor(airquality[,1:4], use="pairwise.complete")
+
 ```
 
 The `cor()` function is picky about missing data and therefore we have to tell it to drop the cases with missing values on a variable for the calculation of a specific correlation. The `"pairwise.complete"` option tells it to use for each correlation the set of observations that complete.
@@ -173,7 +179,7 @@ We can visualise correlation with scatter plots.
 
 > Quick excercise: plot the relationship between wind and ozone with the `ggplot` package. No need to tinker with the plot this time. For extra, you can add a trend line with the `geom_smooth(method = "lm")`
 
-```{r, echo=FALSE}
+```{r}
 ggplot(airquality, aes(Wind, Ozone)) +
     geom_point() +
     geom_smooth(method = "lm")
@@ -228,8 +234,8 @@ data(gapminder)
 
 The result should be something like this. How would you interpret this?
 
-```{r, echo=FALSE}
-options(scipen = 999)
+```{r}
+options(scipen = 5)
 
 gap_prep <- gapminder %>% 
     filter(year == 2007)

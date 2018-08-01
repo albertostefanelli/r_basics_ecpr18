@@ -7,6 +7,8 @@ output:
     html_document:
         toc: true
         toc_depth: 3
+        theme: readable
+        css: style.css
 ---
 
 ```{r setup, include=FALSE}
@@ -318,7 +320,7 @@ my_power2(2, 1:5)
 my_power2(1:5, 2)
 ```
 
-Or we can simulate a dice roll, with the use of the `sample()` function. If you are interested in how to build such simulations in R, you can check out *Grolemund, Garrett. Hands-On Programming with R: Write Your Own Functions and Simulations. " O'Reilly Media, Inc.", 2014.*
+Or we can simulate a dice roll, with the use of the `sample()` function. If you are interested in how to build such simulations in R, you can check out _Grolemund, Garrett. Hands-On Programming with R: Write Your Own Functions and Simulations_
 
 ```{r}
 # create a dice rolling function
@@ -335,8 +337,7 @@ roll()
 
 > **Quick excercise:** write a function, which standardizes (creates z scores from raw scores) an input vector. The formula for the standardization is: $$z=\frac{x-\bar{x}}{S}$$  
 > where, $x$ is the raw score (numeric value in our input vector) in our sample; $\bar{x}$ is the sample mean; and $S$ is the sample standard deviation.  
-> Use your function on the msleep_df$sleep_rem column  
-> You should get the following output:
+
 
 Solution:
 ```{r}
@@ -350,7 +351,8 @@ z_score <- function(x, sample) {
 # let's check our function with some random, normally distributed data
 height <- rnorm(50, 0, 1)
 
-zscore(height[1:5], height) # it works! 
+z_score(height[1:5], height) # it works! 
+
 ```
 
 
@@ -445,8 +447,9 @@ apply(df, 2, function(x) sum(x))
 > Quick excercise: Let's calculate the column means of the msleep_num data frame. Use the `apply()` function!  
 > you should get something similar:  
 
-```{r echo=FALSE}
+```{r}
 apply(msleep_num, 2, function(x) mean(x, na.rm = TRUE))
+
 ```
 
 ## 3.2 `lapply`

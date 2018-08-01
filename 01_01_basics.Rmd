@@ -1,12 +1,14 @@
 ---
 title: "Session One"
-subtitle: "Overview"
+subtitle: "Intro to R"
 author: "Akos Mate"
 date: '2018 July'
 output:
     html_document:
         toc: true
         toc_depth: 3
+        theme: readable
+        css: style.css
 ---
 
 ```{r setup, include=FALSE}
@@ -21,8 +23,8 @@ knitr::opts_chunk$set(echo = TRUE,
 
 # 1. An overview
 
-> Contact info: Akos: mate_akos@phd.ceu.edu | Alberto: Stefanelli_Alberto@student.ceu.edu | Daniel: Kovarek_Daniel@phd.ceu.edu
-> Course materials: [The course's GitHub page](https://github.com/aakosm/r_basics_ecpr18) | [CEU's moodle](https://ceulearning.ceu.edu/)  
+> **Contact info**: Akos: mate_akos@phd.ceu.edu | Alberto: Stefanelli_Alberto@student.ceu.edu | Daniel: Kovarek_Daniel@phd.ceu.edu  
+> **Course materials**: [The course's GitHub page](https://github.com/aakosm/r_basics_ecpr18) | [CEU's moodle](https://ceulearning.ceu.edu/)  
 
 Many thanks for [Martin Mölder](https://martinmolder.com/) @ University of Tartu for help developing this course!  
 
@@ -381,7 +383,8 @@ length(text2)
 
 > QUICK EXCERCISE: create a character vector, which would give the following result.
 
-```{r echo=FALSE}
+solution:
+```{r}
 print(c("42", "4", "2"))
 ```
 
@@ -427,7 +430,8 @@ sum(num > 10)
 
 > QUICK EXCERCISE:  How about when we want to know the proportion of values in the vector `num` that are above a certain value? Use the functions that we have already discussed to calculate this automatically. (let's say 8)
 
-```{r, echo=FALSE}
+solution:
+```{r}
 (num > 8)/length(num)
 ```
 
@@ -579,7 +583,8 @@ mat1
 > (1) a) Access the third row of the mat1 matrix, b) access the columns from the second to the fourth (with one line). You should get the result below.  
 > (2) create a data frame with one character vector and two numeric vectors (with a lenght of 3). Have the columns named as first, second, third. Use the `c()`, `data.frame()` and `colnames()` functions!
 
-```{r, echo=FALSE, collapse=FALSE}
+solution:
+```{r}
 # 1.a) result
 print(mat1[3,])
 

@@ -7,6 +7,8 @@ output:
     html_document:
         toc: true
         toc_depth: 3
+        theme: readable
+        css: style.css
 ---
 
 ```{r setup, include=FALSE}
@@ -78,7 +80,7 @@ diamonds_df <- dplyr::sample_n(diamonds, 250)
 
 Refresher: syntax of the `ggplot2` plots:
 
-```{r, out.width = "550px", echo=FALSE}
+```{r, out.width = "300px", echo=FALSE}
 knitr::include_graphics("ggplot-formula-schematic.png")
 ```
 
@@ -347,7 +349,7 @@ ggplot(data = iris_df,
 ## 3.1 Themes
 In this section we will go over some of the elements that you can modify in order to get an informative and nice looking figure. `ggplot2` comes with a number of themes. You can play around the themes that come with `ggplot2` and you can also take a look at the `ggthemes` package, where I included the economist theme. Another notable theme is the `hrbthemes` package.
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 p1 <- ggplot(data = diamonds_df,
              mapping = aes(x = carat,
                            y = price)) +

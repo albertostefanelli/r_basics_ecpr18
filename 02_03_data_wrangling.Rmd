@@ -7,6 +7,8 @@ output:
     html_document:
         toc: true
         toc_depth: 3
+        theme: readable
+        css: style.css
 ---
 
 ```{r setup, include=FALSE}
@@ -18,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE,
 ```
 
 
-> Main packages used: `base R`, `tidyr`, `ggplot2`, `dplyr`   
+> Main packages used: `base R`, `tidyr`, `ggplot2`, `dplyr`     
 > Main functions covered: `tidyr::gather`, `tidyr::spread`, `dplyr::group_by`, `dplyr::summarise`, `dplyr::bind_rows`, `dplyr::bind_cols` ,`runif`, `[`, `[[`    
 > Supplementary resources: [Data Wrangling cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
 
@@ -194,7 +196,8 @@ unique(stock_tidy$company)
 
 > (4) As a refresher, use the `group_by()` and `summarise()` functions to see the minimum, maximum and mean closing prices for the two company. Use the ` %>% ` pipe operator! You should get something similar as below.
 
-```{r echo=FALSE}
+solution:
+```{r }
 stock_tidy %>% 
     group_by(company) %>% 
     summarise(min = min(stock_closing), max = max(stock_closing), mean = mean(stock_closing))
@@ -202,7 +205,8 @@ stock_tidy %>%
 
 > (5) Finally, use `ggplot2` to visualise the closing prices of the two company. Use the `geom_line()`! You should get a similar plot as below.
 
-```{r echo=FALSE}
+solution:
+```{r }
 p_stock <- ggplot(stock_tidy,
                   aes(date, stock_closing,
                       color = company))

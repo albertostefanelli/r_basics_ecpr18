@@ -7,6 +7,8 @@ output:
     html_document:
         toc: true
         toc_depth: 3
+        theme: readable
+        css: style.css
 bibliography: mybib.bib
 ---
 
@@ -128,7 +130,7 @@ knitr::include_graphics("rmd_new.PNG")
 
 A short document looks like this. We will go over each element and then use our prevous sessions to write a short mock report.
 ```{r example1, echo=FALSE}
-cat(htmltools::includeText("rmds/ex1.rmd"))
+cat(htmltools::includeText("ex1.rmd"))
 ```
 
 

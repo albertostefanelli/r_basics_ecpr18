@@ -7,6 +7,8 @@ output:
     html_document:
         toc: true
         toc_depth: 3
+        theme: readable
+        css: style.css
 ---
 
 ```{r setup, include=FALSE}
@@ -19,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE,
 
 
 > Main packages used: `dplyr`   
-> Main functions covered: `filter()`, `select()`, `mutate()`
+> Main functions covered: `filter()`, `select()`, `mutate()`, `*_join()`, `is.na()`   
 > Supplementary resources: [Suzan Baert's blogpost series](https://suzanbaert.netlify.com/2018/01/dplyr-tutorial-1/), [Data Wrangling cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
 
 
@@ -260,7 +262,7 @@ iris_df <- iris
 
 glimpse(iris_df)
 
-#
+#2
 ggplot(data = iris_df,
        mapping = aes(x = Petal.Length)) +
     geom_histogram()
@@ -357,7 +359,7 @@ Solution:
 ```{r}
 # 1
 
-install.packages("nycflights13")
+# install.packages("nycflights13")
 library(nycflights13)
 
 # 2
