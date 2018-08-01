@@ -1,0 +1,34 @@
+<style type="text/css">
+body, td {
+    font-size: 14px;
+    text-align: justify;
+  }
+
+code.r{
+  font-size: 12px;
+}
+h1 {
+  font-size: 35px;
+  text-align: center;
+}
+h2 {
+  font-size: 28px;
+  text-align: center;
+}
+h3 {
+  font-size: 20px;
+  text-align: center;
+  margin: 2em 0 1.5em 0;
+}
+h4 {
+  font-size: 17px;
+  text-align: center;
+  margin: 0em 0 1em 0;
+}
+blockquote {
+  background: #f9fbff;
+  border-left: 10px solid #009BCD;
+  margin: 1.5em 10px;
+  padding: 0.5em 10px;
+}
+</style>
